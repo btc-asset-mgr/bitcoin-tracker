@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bitcoin Asset Manager</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- 顶部导航栏 -->
+    <nav class="navbar">
+      <div class="nav-brand">
+        <span class="nav-logo">₿</span>
+        <span class="nav-title">Bitcoin Asset Manager</span>
+      </div>
+      <div class="nav-right">
+        <span id="priceStatus" class="badge badge-loading">● 连接中</span>
+        <button id="refreshBtn" class="icon-btn" title="刷新">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+
+        <!-- 账户头像按钮 -->
+        <div class="nav-account-wrap" id="navAccountWrap">
+          <button class="nav-avatar-btn" id="navAvatarBtn" title="账户信息">
+            <span>L</span>
+            <span class="nav-avatar-dot"></span>
+          </button>
+
+          <!-- 下拉面板 -->
+          <div class="nav-dropdown" id="navDropdown">
+            <div class="nd-header">
+              <div class="nd-avatar">L</div>
+              <div class="nd-info">
+                <div class="nd-name">lanshanzhao &nbsp;<span class="nd-vip">VIP 2</span></div>
+                <div class="nd-uid">UID: BTC-2025-****7293</div>
+                <div class="nd-tags">
+                  <span class="nd-tag nd-verified">✓ 已验证</span>
+                  <span class="nd-tag nd-kyc">✓ KYC</span>
+                </div>
+              </div>
+            </div>
+            <div class="nd-divider"></div>
+            <div class="nd-row">
+              <span class="nd-label">账户净值</span>
+              <span class="nd-val nd-accent" id="ndNetWorth">—</span>
+            </div>
+
+            <div class="nd-row">
+              <span class="nd-label">持有 BTC</span>
+              <span class="nd-val">0.1050 BTC</span>
+            </div>
+            <div class="nd-row">
+              <span class="nd-label">今日盈亏</span>
+              <span class="nd-val" id="ndTodayPnl">—</span>
+            </div>
+            <div class="nd-row">
+              <span class="nd-label">累计盈亏</span>
+              <span class="nd-val" id="ndTotalPnl">—</span>
+            </div>
+            <div class="nd-row">
+              <span class="nd-label">持仓天数</span>
+              <span class="nd-val" id="ndDays">—</span>
+            </div>
+            <div class="nd-divider"></div>
+            <!-- 账户详情 & 交易记录入口 -->
+            <button class="nd-profile-btn" id="ndProfileBtn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              账户资料 & 交易记录
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 账户资料侧边抽屉 -->
+    <div class="drawer-overlay" id="drawerOverlay"></div>
+    <div class="drawer" id="profileDrawer">
+      <div class="drawer-header">
+        <div class="drawer-title">账户资料</div>
+        <button class="drawer-close" id="drawerClose">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="drawer-body">
+
+        <!-- 个人信息 -->
+        <div class="drawer-profile">
+          <div class="dp-avatar-wrap">
+            <div class="dp-avatar">L</div>
+            <div class="dp-online"></div>
+          </div>
+          <div class="dp-detail">
+            <div class="dp-name">lanshanzhao <span class="dp-nick">· laner</span></div>
+            <div class="dp-level">
+              <span class="lv-badge lv-gold">VIP 2</span>
+              <span class="dp-since">注册于 2025-07-10</span>
+            </div>
+            <div class="dp-tags">
+              <span class="dptag dptag-kyc">✓ KYC 认证</span>
+              <span class="dptag dptag-2fa">✓ 双重验证</span>
+              <span class="dptag dptag-bind">✓ 手机绑定</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 账户信息网格 -->
+        <div class="dp-stat-grid">
+          <div class="dp-stat">
+            <div class="dp-stat-label">注册邮箱</div>
+            <div class="dp-stat-val">laner***@gmail.com</div>
+          </div>
+          <div class="dp-stat">
+            <div class="dp-stat-label">绑定手机</div>
+            <div class="dp-stat-val">+86 182****3356</div>
+          </div>
+          <div class="dp-stat">
+            <div class="dp-stat-label">累计充值</div>
+            <div class="dp-stat-val">¥70,000</div>
+          </div>
+          <div class="dp-stat">
+            <div class="dp-stat-label">累计交易额</div>
+            <div class="dp-stat-val">$46,827.03</div>
+          </div>
+          <div class="dp-stat">
+            <div class="dp-stat-label">账户安全</div>
+            <div class="dp-stat-val dp-safe">● 安全</div>
+          </div>
+          <div class="dp-stat">
+            <div class="dp-stat-label">最后登录</div>
+            <div class="dp-stat-val" id="drawerLastLogin">—</div>
+          </div>
+        </div>
+
+        <!-- 账户资产余额 -->
+        <div class="drawer-section-title">账户资产</div>
+        <div class="balance-card">
+          <div class="bal-item bal-item-usdt">
+            <div class="bal-icon">💵</div>
+            <div class="bal-body">
+              <div class="bal-label">可用余额 (USDT)</div>
+              <div class="bal-val" id="balUsdt">—</div>
+              <div class="bal-sub" id="balUsdtCny">—</div>
+            </div>
+          </div>
+          <div class="bal-divider"></div>
+          <div class="bal-item">
+            <div class="bal-icon">₿</div>
+            <div class="bal-body">
+              <div class="bal-label">持仓 (BTC)</div>
+              <div class="bal-val">0.10500000 BTC</div>
+              <div class="bal-sub" id="balBtcUsdt">—</div>
+            </div>
+          </div>
+          <div class="bal-divider"></div>
+          <div class="bal-item">
+            <div class="bal-icon">📊</div>
+            <div class="bal-body">
+              <div class="bal-label">总资产估值</div>
+              <div class="bal-val" id="balTotal">—</div>
+              <div class="bal-sub" id="balTotalCny">—</div>
+              <div class="bal-sub" id="balTotalPnl">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 交易记录 -->
+        <div class="drawer-section-title">交易记录</div>
+        <div class="tx-filter-bar">
+          <button class="tx-filter-btn active" data-filter="all">全部</button>
+          <button class="tx-filter-btn" data-filter="buy">买入</button>
+          <button class="tx-filter-btn" data-filter="sell">卖出</button>
+          <button class="tx-filter-btn" data-filter="deposit">充值</button>
+        </div>
+        <div class="tx-list" id="txList"></div>
+        <div class="tx-summary" id="txSummary"></div>
+
+      </div>
+    </div>
+
+    <main class="main">
+
+      <!-- BTC 实时价格横幅 -->
+      <div class="price-banner">
+        <div class="price-banner-left">
+          <div class="price-ticker-row">
+            <span class="price-ticker">BTC / USDT</span>
+            <span class="price-source-tag">Binance · 实时</span>
+          </div>
+          <div class="price-big" id="btcPrice">—</div>
+          <div class="price-change-row">
+            <div id="btcChange" class="price-change">—</div>
+            <div id="btcChange7d" class="price-change-tag">—</div>
+          </div>
+        </div>
+        <div class="price-stats-grid">
+          <div class="ps-item">
+            <div class="ps-label">24h 最高</div>
+            <div class="ps-val profit" id="price24hHigh">—</div>
+          </div>
+          <div class="ps-item">
+            <div class="ps-label">24h 最低</div>
+            <div class="ps-val loss" id="price24hLow">—</div>
+          </div>
+          <div class="ps-item">
+            <div class="ps-label">开盘价</div>
+            <div class="ps-val" id="price24hOpen">—</div>
+          </div>
+          <div class="ps-item">
+            <div class="ps-label">24h 成交量</div>
+            <div class="ps-val" id="btcVolume">—</div>
+          </div>
+          <div class="ps-item">
+            <div class="ps-label">市值</div>
+            <div class="ps-val" id="btcMarketCap">—</div>
+          </div>
+          <div class="ps-item">
+            <div class="ps-label">CNY 汇率</div>
+            <div class="ps-val" id="cnyRateDisplay">¥7.27</div>
+          </div>
+          <div class="ps-item">
+            <div class="ps-label">流通供应量</div>
+            <div class="ps-val">19,851,093 BTC</div>
+          </div>
+          <div class="ps-item">
+            <div class="ps-label">更新时间</div>
+            <div class="ps-val" id="lastUpdated">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 减半倒计时 + 关键链上数据 -->
+      <div class="chain-row">
+        <div class="chain-card chain-halving">
+          <div class="ch-icon">⛏️</div>
+          <div class="ch-body">
+            <div class="ch-label">下次减半倒计时</div>
+            <div class="ch-val" id="halvingCountdown">—</div>
+            <div class="ch-sub" id="halvingBlock">预计区块 #1,050,000</div>
+          </div>
+        </div>
+        <div class="chain-card">
+          <div class="ch-icon">📦</div>
+          <div class="ch-body">
+            <div class="ch-label">当前区块高度</div>
+            <div class="ch-val" id="blockHeight">~895,xxx</div>
+            <div class="ch-sub">约每10分钟出块</div>
+          </div>
+        </div>
+        <div class="chain-card">
+          <div class="ch-icon">🏆</div>
+          <div class="ch-body">
+            <div class="ch-label">历史最高价 (ATH)</div>
+            <div class="ch-val" id="btcAth">—</div>
+            <div class="ch-sub" id="btcAthDiff">距高点 —</div>
+          </div>
+        </div>
+        <div class="chain-card">
+          <div class="ch-icon">💎</div>
+          <div class="ch-body">
+            <div class="ch-label">总供应上限</div>
+            <div class="ch-val">21,000,000</div>
+            <div class="ch-sub">已挖出 94.5%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 市场情绪 & 关键指标 -->
+      <div class="section-title">市场情绪 & 全球数据</div>
+      <div class="market-row">
+        <div class="market-card fear-greed-card">
+          <div class="mk-label">恐贪指数</div>
+          <div class="fear-greed-wrap">
+            <div class="fear-greed-dial">
+              <svg viewBox="0 0 120 70" width="120" height="70">
+                <path d="M10 60 A50 50 0 0 1 110 60" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10" stroke-linecap="round"/>
+                <path id="fgArc" d="M10 60 A50 50 0 0 1 110 60" fill="none" stroke="#f7931a" stroke-width="10" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="157"/>
+                <text id="fgScore" x="60" y="56" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">—</text>
+              </svg>
+            </div>
+            <div id="fgLabel" class="fear-greed-label">加载中</div>
+            <div id="fgUpdate" class="fear-greed-sub">—</div>
+          </div>
+        </div>
+        <div class="market-card">
+          <div class="mk-label">BTC 市场份额</div>
+          <div class="mk-big" id="btcDominance">—</div>
+          <div class="mk-sub">全球加密市值占比</div>
+          <div class="mk-trend" id="btcDominanceTrend">—</div>
+        </div>
+        <div class="market-card">
+          <div class="mk-label">全球加密市值</div>
+          <div class="mk-big" id="globalMarketCap">—</div>
+          <div class="mk-sub" id="globalMarketCapSub">—</div>
+          <div class="mk-trend" id="globalMarketCapTrend">—</div>
+        </div>
+        <div class="market-card">
+          <div class="mk-label">全网算力（估算）</div>
+          <div class="mk-big">~850 EH/s</div>
+          <div class="mk-sub">挖矿难度持续增长</div>
+          <div class="mk-trend profit">↑ 算力新高</div>
+        </div>
+      </div>
+
+      <!-- 持仓概览 -->
+      <div class="section-title" id="持仓概览">我的持仓</div>
+      <div class="overview-grid">
+        <div class="overview-card card-accent">
+          <div class="ov-label">总投入成本</div>
+          <div class="ov-value">¥70,000</div>
+          <div class="ov-sub">≈ $9,627.03 USD</div>
+        </div>
+        <div class="overview-card">
+          <div class="ov-label">持有数量</div>
+          <div class="ov-value">0.1050 BTC</div>
+          <div class="ov-sub">均价 $91,686 · 仓位占比 100%</div>
+        </div>
+        <div class="overview-card">
+          <div class="ov-label">当前市值</div>
+          <div class="ov-value" id="ovCurrentValue">—</div>
+          <div class="ov-sub" id="ovCurrentValueCNY">—</div>
+        </div>
+        <div class="overview-card card-pnl">
+          <div class="ov-label">未实现盈亏</div>
+          <div class="ov-value" id="ovPnl">—</div>
+          <div class="ov-sub" id="ovPnlPct">—</div>
+        </div>
+      </div>
+
+      <!-- 持仓风险指标 -->
+      <div class="section-title">风险 & 收益指标</div>
+      <div class="risk-grid">
+        <div class="risk-card">
+          <div class="rk-label">今日盈亏</div>
+          <div class="rk-val" id="riskTodayPnl">—</div>
+          <div class="rk-sub" id="riskTodayPnlPct">—</div>
+        </div>
+        <div class="risk-card">
+          <div class="rk-label">持仓均价</div>
+          <div class="rk-val">$91,686</div>
+          <div class="rk-sub">建仓日 2025-08-05</div>
+        </div>
+        <div class="risk-card">
+          <div class="rk-label">盈亏平衡价</div>
+          <div class="rk-val">$91,686</div>
+          <div class="rk-sub" id="riskBreakevenGap">距平衡线 —</div>
+        </div>
+        <div class="risk-card">
+          <div class="rk-label">持仓天数</div>
+          <div class="rk-val" id="riskDays">—</div>
+          <div class="rk-sub">自 2025-08-05 起</div>
+        </div>
+        <div class="risk-card">
+          <div class="rk-label">区间最大回撤</div>
+          <div class="rk-val loss" id="riskMaxDD">—</div>
+          <div class="rk-sub">基于建仓均价计算</div>
+        </div>
+        <div class="risk-card">
+          <div class="rk-label">回报率 (ROI)</div>
+          <div class="rk-val" id="riskRoi">—</div>
+          <div class="rk-sub">相对建仓成本</div>
+        </div>
+      </div>
+
+      <!-- 持仓详情 -->
+      <div class="section-title">持仓详情</div>
+      <div class="detail-table">
+        <div class="detail-row">
+          <span class="detail-label">资产</span>
+          <span class="detail-value">Bitcoin (BTC)</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">持仓数量</span>
+          <span class="detail-value">0.1050 BTC</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">建仓均价</span>
+          <span class="detail-value">$91,686.00</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">投入成本</span>
+          <span class="detail-value">$9,627.03 <span class="cny-tag">≈ ¥70,000</span></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">当前价格</span>
+          <span class="detail-value" id="detailBtcPrice">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">当前市值</span>
+          <span class="detail-value" id="detailCurrentValue">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">未实现盈亏</span>
+          <span class="detail-value" id="detailPnl">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">回报率 (ROI)</span>
+          <span class="detail-value" id="detailRoi">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">建仓时间</span>
+          <span class="detail-value">2025-08-05</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">持仓天数</span>
+          <span class="detail-value" id="detailDays">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">盈亏平衡价</span>
+          <span class="detail-value">$91,686.00</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">距盈亏平衡</span>
+          <span class="detail-value" id="detailBreakevenDiff">—</span>
+        </div>
+      </div>
+
+      <!-- 价格目标 -->
+      <div class="section-title">价格目标 & 关键价位</div>
+      <div class="targets-card">
+        <div class="target-row">
+          <div class="target-info">
+            <div class="target-label">🎯 短期目标</div>
+            <div class="target-price">$105,000</div>
+          </div>
+          <div class="target-progress-wrap">
+            <div class="target-progress-bar"><div class="target-progress-fill" id="prog105" style="width:0%"></div></div>
+            <div class="target-pct" id="pct105">—</div>
+          </div>
+        </div>
+        <div class="target-row">
+          <div class="target-info">
+            <div class="target-label">🚀 中期目标</div>
+            <div class="target-price">$150,000</div>
+          </div>
+          <div class="target-progress-wrap">
+            <div class="target-progress-bar"><div class="target-progress-fill target-mid" id="prog150" style="width:0%"></div></div>
+            <div class="target-pct" id="pct150">—</div>
+          </div>
+        </div>
+        <div class="target-row">
+          <div class="target-info">
+            <div class="target-label">💎 长期目标</div>
+            <div class="target-price">$200,000</div>
+          </div>
+          <div class="target-progress-wrap">
+            <div class="target-progress-bar"><div class="target-progress-fill target-long" id="prog200" style="width:0%"></div></div>
+            <div class="target-pct" id="pct200">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 持仓盈亏走势 -->
+      <div class="section-title">持仓盈亏走势</div>
+      <div class="chart-card">
+        <div class="chart-legend">
+          <span class="chart-legend-item profit-dot">盈利区间</span>
+          <span class="chart-legend-item loss-dot">亏损区间</span>
+        </div>
+        <canvas id="pnlChart" height="130"></canvas>
+      </div>
+
+      <!-- BTC 价格趋势 -->
+      <div class="section-title">BTC 价格趋势（近30天）</div>
+      <div class="chart-card">
+        <canvas id="priceChart" height="130"></canvas>
+      </div>
+
+      <!-- 实时市场动态 -->
+      <div class="section-title">市场资讯</div>
+      <div class="news-filter-bar">
+        <button class="news-filter-btn active" data-cat="all">全部</button>
+        <button class="news-filter-btn" data-cat="market">行情</button>
+        <button class="news-filter-btn" data-cat="macro">宏观</button>
+        <button class="news-filter-btn" data-cat="onchain">链上</button>
+        <button class="news-filter-btn" data-cat="etf">ETF</button>
+      </div>
+      <div class="news-card" id="marketNews">
+        <div class="news-loading">加载资讯中...</div>
+      </div>
+
+    </main>
+
+    <footer class="footer">
+      <p>数据来源：CoinGecko · Alternative.me · 每 60 秒自动刷新 &nbsp;·&nbsp; 仅供参考，不构成投资建议</p>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
