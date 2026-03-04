@@ -40,6 +40,19 @@ body {
 .nav-title { font-size: 1rem; font-weight: 700; color: #fff; }
 .nav-right { display: flex; align-items: center; gap: 10px; }
 
+.nav-sync-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; font-size: 0.78rem; font-weight: 600;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-muted); border-radius: 8px;
+  cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.nav-sync-btn:hover:not(:disabled) {
+  color: var(--text); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.06);
+}
+.nav-sync-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.nav-sync-btn svg.spin { animation: spin 0.8s linear infinite; }
+
 .badge { font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
 .badge-live    { color: var(--profit); background: rgba(38,166,154,0.15); }
 .badge-loading { color: var(--accent); background: rgba(247,147,26,0.15); }
@@ -157,13 +170,14 @@ body {
 .drawer.drawer-open { transform: translateX(0); }
 
 .drawer-header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 0 20px; height: 56px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   background: rgba(247,147,26,0.04);
 }
-.drawer-title { font-size: 0.95rem; font-weight: 700; color: #fff; }
+.drawer-title { font-size: 0.95rem; font-weight: 700; color: #fff; flex: 1; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .drawer-close {
   background: transparent; border: none; color: var(--text-muted);
   cursor: pointer; padding: 4px; border-radius: 6px;
@@ -252,14 +266,19 @@ body {
 .tx-filter-bar {
   display: flex; gap: 6px; margin-bottom: 10px;
 }
-.tx-filter-btn {
+.tx-filter-btn,
+.gold-filter-btn {
   font-size: 0.73rem; font-weight: 600; padding: 4px 12px;
   border-radius: 20px; border: 1px solid var(--border);
   background: transparent; color: var(--text-muted);
   cursor: pointer; transition: all 0.15s;
 }
-.tx-filter-btn:hover { color: var(--text); }
-.tx-filter-btn.active { color: var(--accent); border-color: rgba(247,147,26,0.5); background: rgba(247,147,26,0.1); }
+.tx-filter-btn:hover,
+.gold-filter-btn:hover { color: var(--text); }
+.tx-filter-btn.active,
+.gold-filter-btn.active {
+  color: var(--accent); border-color: rgba(247,147,26,0.5); background: rgba(247,147,26,0.1);
+}
 
 .tx-list {
   background: var(--surface2); border: 1px solid var(--border);
@@ -357,6 +376,73 @@ body {
 .ts-item:last-child { border-right: none; }
 .ts-label   { font-size: 0.65rem; color: var(--text-muted); margin-bottom: 3px; }
 .ts-value   { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+
+/* ── 资产切换入口行 ── */
+.asset-switch-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin-bottom: 16px;
+}
+.asset-switch-card {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  cursor: default; text-decoration: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.asset-switch-active {
+  border-color: rgba(247,147,26,0.4);
+  background: linear-gradient(135deg, rgba(247,147,26,0.07), rgba(247,147,26,0.02));
+}
+.asset-switch-gold {
+  border-color: rgba(212,175,55,0.35);
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  cursor: pointer;
+}
+.asset-switch-gold:hover {
+  border-color: rgba(212,175,55,0.7);
+  box-shadow: 0 2px 12px rgba(212,175,55,0.15);
+  text-decoration: none;
+}
+.asw-icon { font-size: 1.6rem; flex-shrink: 0; }
+.asw-body { flex: 1; min-width: 0; }
+.asw-name { font-size: 0.9rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
+.asw-sub  { font-size: 0.72rem; color: var(--text-muted); }
+.asw-gold-price { color: #D4AF37 !important; font-weight: 600; }
+.asw-right { text-align: right; flex-shrink: 0; }
+.asw-gold-pnl { font-size: 0.78rem; font-weight: 700; margin-bottom: 4px; }
+.asw-badge {
+  font-size: 0.62rem; font-weight: 700; padding: 2px 7px;
+  border-radius: 10px; white-space: nowrap;
+  color: var(--accent); background: rgba(247,147,26,0.15); border: 1px solid rgba(247,147,26,0.3);
+}
+.asw-badge-gold {
+  color: #D4AF37; background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.3);
+}
+
+/* ── 抽屉多资产Tab ── */
+.drawer-asset-tabs {
+  display: flex; gap: 6px; margin-bottom: 14px;
+}
+.dat-btn {
+  flex: 1; padding: 8px 0; text-align: center;
+  font-size: 0.8rem; font-weight: 700;
+  border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text-muted); transition: all 0.15s; text-decoration: none;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.dat-active {
+  background: rgba(247,147,26,0.15); color: var(--accent);
+  border-color: rgba(247,147,26,0.4);
+}
+.dat-gold {
+  background: rgba(212,175,55,0.08); color: #D4AF37;
+  border-color: rgba(212,175,55,0.3);
+}
+.dat-gold:hover, .dat-gold.dat-active {
+  background: rgba(212,175,55,0.2); border-color: rgba(212,175,55,0.65);
+  color: #D4AF37;
+}
 
 /* ── Main ── */
 .main { max-width: 780px; margin: 0 auto; padding: 24px 16px 48px; }

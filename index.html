@@ -16,6 +16,10 @@
         <span class="nav-title">Bitcoin Asset Manager</span>
       </div>
       <div class="nav-right">
+        <button class="nav-sync-btn" id="navSyncBtn" title="同步 BTC、黄金价格与资产">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          <span>同步</span>
+        </button>
         <span id="priceStatus" class="badge badge-loading">● 连接中</span>
         <button id="refreshBtn" class="icon-btn" title="刷新">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -155,9 +159,19 @@
           </div>
           <div class="bal-divider"></div>
           <div class="bal-item">
+            <div class="bal-icon">🥇</div>
+            <div class="bal-body">
+              <div class="bal-label">持仓黄金 (XAU)</div>
+              <div class="bal-val" id="balGoldVal">—</div>
+              <div class="bal-sub" id="balGoldBuy">—</div>
+              <div class="bal-sub" id="balGoldPnl">—</div>
+            </div>
+          </div>
+          <div class="bal-divider"></div>
+          <div class="bal-item">
             <div class="bal-icon">📊</div>
             <div class="bal-body">
-              <div class="bal-label">总资产估值</div>
+              <div class="bal-label">总资产估值 (BTC)</div>
               <div class="bal-val" id="balTotal">—</div>
               <div class="bal-sub" id="balTotalCny">—</div>
               <div class="bal-sub" id="balTotalPnl">—</div>
@@ -166,15 +180,37 @@
         </div>
 
         <!-- 交易记录 -->
-        <div class="drawer-section-title">交易记录</div>
-        <div class="tx-filter-bar">
-          <button class="tx-filter-btn active" data-filter="all">全部</button>
-          <button class="tx-filter-btn" data-filter="buy">买入</button>
-          <button class="tx-filter-btn" data-filter="sell">卖出</button>
-          <button class="tx-filter-btn" data-filter="deposit">充值</button>
+        <!-- 多资产切换 -->
+        <div class="drawer-asset-tabs">
+          <button class="dat-btn dat-active" id="datBtc">₿ 比特币</button>
+          <button class="dat-btn" id="datGold">🥇 黄金</button>
         </div>
-        <div class="tx-list" id="txList"></div>
-        <div class="tx-summary" id="txSummary"></div>
+
+        <!-- BTC 交易记录面板 -->
+        <div id="panelBtc">
+          <div class="drawer-section-title">BTC 交易记录</div>
+          <div class="tx-filter-bar">
+            <button class="tx-filter-btn active" data-filter="all">全部</button>
+            <button class="tx-filter-btn" data-filter="buy">买入</button>
+            <button class="tx-filter-btn" data-filter="sell">卖出</button>
+            <button class="tx-filter-btn" data-filter="deposit">充值</button>
+          </div>
+          <div class="tx-list" id="txList"></div>
+          <div class="tx-summary" id="txSummary"></div>
+        </div>
+
+        <!-- 黄金交易记录面板 -->
+        <div id="panelGold" style="display:none">
+          <div class="drawer-section-title">黄金交易记录</div>
+          <div class="tx-filter-bar">
+            <button class="gold-filter-btn active" data-filter="all">全部</button>
+            <button class="gold-filter-btn" data-filter="buy">买入</button>
+            <button class="gold-filter-btn" data-filter="sell">卖出</button>
+            <button class="gold-filter-btn" data-filter="deposit">充值</button>
+          </div>
+          <div class="tx-list" id="goldTxList"></div>
+          <div class="tx-summary" id="goldTxSummary"></div>
+        </div>
 
       </div>
     </div>
@@ -228,6 +264,29 @@
             <div class="ps-val" id="lastUpdated">—</div>
           </div>
         </div>
+      </div>
+
+      <!-- 资产切换入口 -->
+      <div class="asset-switch-row">
+        <div class="asset-switch-card asset-switch-active">
+          <div class="asw-icon">₿</div>
+          <div class="asw-body">
+            <div class="asw-name">Bitcoin</div>
+            <div class="asw-sub">BTC · 当前查看</div>
+          </div>
+          <span class="asw-badge">持仓中</span>
+        </div>
+        <a class="asset-switch-card asset-switch-gold" href="../黄金投资/index.html" target="_blank">
+          <div class="asw-icon">🥇</div>
+          <div class="asw-body">
+            <div class="asw-name">黄金</div>
+            <div class="asw-sub asw-gold-price" id="goldPriceSmall">XAU · 加载中</div>
+          </div>
+          <div class="asw-right">
+            <div class="asw-gold-pnl" id="goldPnlSmall">—</div>
+            <span class="asw-badge asw-badge-gold">点击查看 →</span>
+          </div>
+        </a>
       </div>
 
       <!-- 减半倒计时 + 关键链上数据 -->

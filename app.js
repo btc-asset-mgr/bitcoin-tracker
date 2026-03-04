@@ -90,6 +90,11 @@ function renderPortfolio(price) {
 
   if (!pnlChart)   fetchHistoryAndRenderPnlChart();
   if (!priceChart) fetchAndRenderPriceChart();
+
+  // 抽屉如果已打开，同步更新余额卡
+  if (document.getElementById("profileDrawer")?.classList.contains("drawer-open")) {
+    updateBalanceCard();
+  }
 }
 
 function set(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; }
@@ -448,10 +453,12 @@ function initNavDropdown() {
   });
 }
 
-function openDrawer() {
+async function openDrawer() {
   document.getElementById("profileDrawer")?.classList.add("drawer-open");
   document.getElementById("drawerOverlay")?.classList.add("drawer-open");
   document.body.style.overflow = "hidden";
+  // 若金价还未加载，先拉一次再渲染，避免"加载中"卡住
+  if (!goldPriceCNY) await fetchGoldPriceSmall();
   updateBalanceCard();
 }
 function closeDrawer() {
@@ -460,9 +467,43 @@ function closeDrawer() {
   document.body.style.overflow = "";
 }
 
+const DRAWER_SYNC_DEBOUNCE = 2000; // 2秒内不允许重复点击
+let lastDrawerSync = 0;
+
+async function syncDrawerData() {
+  const now = Date.now();
+  if (now - lastDrawerSync < DRAWER_SYNC_DEBOUNCE) return;
+  lastDrawerSync = now;
+
+  const btn = document.getElementById("navSyncBtn");
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add("syncing");
+    const svg = btn.querySelector("svg");
+    if (svg) svg.classList.add("spin");
+    const span = btn.querySelector("span");
+    if (span) span.textContent = "同步中…";
+  }
+
+  await Promise.all([fetchPrice(), fetchGoldPriceSmall()]);
+  updateBalanceCard();
+  if (btcPrice) renderPortfolio(btcPrice);
+  renderTransactions(txCurrentFilter, txCurrentPage);
+  renderGoldTransactions(goldTxCurrentFilter, goldTxCurrentPage);
+
+  if (btn) {
+    btn.disabled = false;
+    btn.classList.remove("syncing");
+    btn.querySelector("svg")?.classList.remove("spin");
+    const span = btn.querySelector("span");
+    if (span) span.textContent = "同步";
+  }
+}
+
 function initDrawer() {
   document.getElementById("drawerClose")?.addEventListener("click", closeDrawer);
   document.getElementById("drawerOverlay")?.addEventListener("click", closeDrawer);
+  document.getElementById("navSyncBtn")?.addEventListener("click", syncDrawerData);
   // 最后登录
   const now = new Date();
   set("drawerLastLogin",
@@ -485,22 +526,7 @@ const TRANSACTIONS = [
   { id: "TXN-20250804-005", type: "deposit", date: "2025-08-04 09:20:44", amount: 20000, price: null, btcQty: null, fee: 0, note: "建仓前追加" },
   // 累计入金 ¥70,000 → 换汇约 $9,628 USDT
 
-  // ── 2025年8月～2026年2月 · 持续追加入金 ──
-  { id: "TXN-20250814-D01", type: "deposit", date: "2025-08-14 21:34:02", amount: 3000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
-  { id: "TXN-20250901-D02", type: "deposit", date: "2025-09-01 17:49:09", amount: 2000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
-  { id: "TXN-20250908-D03", type: "deposit", date: "2025-09-08 16:48:18", amount: 3000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
-  { id: "TXN-20251008-D04", type: "deposit", date: "2025-10-08 09:54:37", amount: 3000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
-  { id: "TXN-20251009-D05", type: "deposit", date: "2025-10-09 20:00:06", amount: 2000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
-  { id: "TXN-20251015-D06", type: "deposit", date: "2025-10-15 18:49:28", amount: 3000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
-  { id: "TXN-20251109-D07", type: "deposit", date: "2025-11-09 19:13:34", amount: 3500,  price: null, btcQty: null, fee: 0, note: "追加充值" },
-  { id: "TXN-20251208-D08", type: "deposit", date: "2025-12-08 19:15:12", amount: 3600,  price: null, btcQty: null, fee: 0, note: "追加充值" },
-  { id: "TXN-20251214-D09", type: "deposit", date: "2025-12-14 19:03:04", amount: 300,   price: null, btcQty: null, fee: 0, note: "追加充值" },
-  { id: "TXN-20260108-D10", type: "deposit", date: "2026-01-08 21:06:23", amount: 3000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
-  { id: "TXN-20260201-D11", type: "deposit", date: "2026-02-01 10:02:25", amount: 1500,  price: null, btcQty: null, fee: 0, note: "追加充值" },
-  { id: "TXN-20260206-D12", type: "deposit", date: "2026-02-06 17:13:30", amount: 50000, price: null, btcQty: null, fee: 0, note: "大额追加充值" },
-  { id: "TXN-20260213-D13", type: "deposit", date: "2026-02-13 16:05:39", amount: 3000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
-  { id: "TXN-20260216-D14", type: "deposit", date: "2026-02-16 21:25:56", amount: 2000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
-  // 新增入金合计 ¥83,900，累计总入金 ¥153,900
+  // ── 2025-08-14 起充值已转入黄金投资账户，详见黄金投资页 ──
 
   // ── 2025年7月 · 小额试仓感受市场 ──
   { id: "TXN-20250712-006", type: "buy",  date: "2025-07-12 14:33:08", amount: 688.00,  price: 86000.00, btcQty: 0.00800000, fee: 0.69, note: "市价买入 · 小额试仓" },
@@ -731,7 +757,8 @@ function renderTxPagination(total, totalPages) {
 
 function updateBalanceCard() {
   const price = btcPrice || 0;
-  // 可用 USDT = 充值换汇总额 - 所有买入花费（含手续费）+ 所有卖出到账（已扣手续费）
+
+  // ── BTC 侧（2025-08-05 起算，仅 USDT + BTC）──
   const depositUsdt = TRANSACTIONS.filter(t => t.type === "deposit")
     .reduce((s, t) => s + t.amount / cnyRate, 0);
   const buySpent = TRANSACTIONS.filter(t => t.type === "buy")
@@ -739,31 +766,54 @@ function updateBalanceCard() {
   const sellRecv = TRANSACTIONS.filter(t => t.type === "sell")
     .reduce((s, t) => s + t.amount - t.fee, 0);
   const availUsdt = depositUsdt - buySpent + sellRecv;
+  const btcVal    = PORTFOLIO.btcAmount * price;
+  const btcValCNY = btcVal * cnyRate;
 
-  const btcVal   = PORTFOLIO.btcAmount * price;
-  const totalVal = availUsdt + btcVal;
-  // 总成本 = 累计充值换汇
-  const totalCost = depositUsdt;
-  const totalPnl  = totalVal - totalCost;
-  const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
-  const pnlCls = totalPnl >= 0 ? "bal-pnl-profit" : "bal-pnl-loss";
-  const pnlSign = totalPnl >= 0 ? "+" : "";
+  // BTC 总资产 = USDT + BTC（不含黄金）
+  const btcTotalVal   = availUsdt + btcVal;
+  const btcTotalCost  = depositUsdt;
+  const btcTotalPnl   = btcTotalVal - btcTotalCost;
+  const btcTotalPnlPct = btcTotalCost > 0 ? (btcTotalPnl / btcTotalCost) * 100 : 0;
 
-  const fmt2 = v => v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const fmtCNY = v => "¥" + (v * cnyRate).toLocaleString("zh-CN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  // ── 黄金侧（单独，2025-08-14 起，按充值笔数统计）──
+  const { netGrams, holdCost, totalBuyCNY } = calcGoldPortfolio();
+  const goldValCNY  = goldPriceCNY ? netGrams * goldPriceCNY : 0;
+  const goldPnlCNY  = goldPriceCNY ? goldValCNY - holdCost : 0;
+  const goldPnlPct  = holdCost > 0 ? (goldPnlCNY / holdCost) * 100 : 0;
 
+  const fmt2   = v => v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtC   = v => "¥" + v.toLocaleString("zh-CN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const fmtCU  = v => "¥" + (v * cnyRate).toLocaleString("zh-CN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const sign   = v => v >= 0 ? "+" : "";
+
+  // USDT 行
   set("balUsdt",    fmt2(availUsdt) + " USDT");
-  set("balUsdtCny", "≈ " + fmtCNY(availUsdt));
-  set("balBtcUsdt", price ? "≈ $" + fmt2(btcVal) + "  ·  " + fmtCNY(btcVal) : "—");
-  set("balTotal",   price ? "$" + fmt2(totalVal) : "—");
-  set("balTotalCny","≈ " + fmtCNY(totalVal));
+  set("balUsdtCny", "≈ " + fmtCU(availUsdt));
 
-  // 总盈亏
+  // BTC 行
+  set("balBtcUsdt", price ? "≈ $" + fmt2(btcVal) + "  ·  " + fmtC(btcValCNY) : "—");
+
+  // 黄金行（累计买入；盈亏）
+  const goldEl = document.getElementById("balGoldVal");
+  if (goldEl) goldEl.textContent = goldPriceCNY
+    ? netGrams.toFixed(3) + " 克  ≈ " + fmtC(goldValCNY) : "加载中…";
+  set("balGoldBuy", "累计买入 " + fmtC(totalBuyCNY));
+  const goldPnlEl = document.getElementById("balGoldPnl");
+  if (goldPnlEl) {
+    goldPnlEl.className = "bal-sub " + (goldPnlCNY >= 0 ? "bal-pnl-profit" : "bal-pnl-loss");
+    goldPnlEl.textContent = goldPriceCNY
+      ? "盈亏 " + sign(goldPnlCNY) + fmtC(goldPnlCNY) + " (" + sign(goldPnlPct) + goldPnlPct.toFixed(2) + "%)"
+      : "盈亏 —";
+  }
+
+  // 总资产行（仅 BTC：USDT + BTC，2025-08-05 起算）
+  set("balTotal",   price ? "$" + fmt2(btcTotalVal) : "—");
+  set("balTotalCny","≈ " + fmtC(btcTotalVal * cnyRate));
   const pnlEl = document.getElementById("balTotalPnl");
   if (pnlEl) {
-    pnlEl.className = "bal-sub " + pnlCls;
+    pnlEl.className = "bal-sub " + (btcTotalPnl >= 0 ? "bal-pnl-profit" : "bal-pnl-loss");
     pnlEl.textContent = price
-      ? `总盈亏 ${pnlSign}$${fmt2(totalPnl)} (${pnlSign}${totalPnlPct.toFixed(2)}%)`
+      ? "总盈亏 " + sign(btcTotalPnl) + "$" + fmt2(btcTotalPnl) + " (" + sign(btcTotalPnlPct) + btcTotalPnlPct.toFixed(2) + "%)"
       : "—";
   }
 }
@@ -773,10 +823,315 @@ function initTxFilter() {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tx-filter-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      renderTransactions(btn.dataset.filter, 1); // 切换筛选时回到第1页
+      renderTransactions(btn.dataset.filter, 1);
     });
   });
   renderTransactions("all", 1);
+}
+
+// ── 黄金交易记录 ──
+const GOLD_TRANSACTIONS = [
+  // 充值记录（2025-08-14 起，已从BTC账户转入）
+  { id: "AU-D-20250814", type: "deposit", date: "2025-08-14 21:34:02", amount: 3000,  price: null, grams: null, fee: 0, note: "初始转入" },
+  { id: "AU-D-20250901", type: "deposit", date: "2025-09-01 17:49:09", amount: 2000,  price: null, grams: null, fee: 0, note: "追加充值" },
+  { id: "AU-D-20250908", type: "deposit", date: "2025-09-08 16:48:18", amount: 3000,  price: null, grams: null, fee: 0, note: "追加充值" },
+  { id: "AU-D-20251008", type: "deposit", date: "2025-10-08 09:54:37", amount: 3000,  price: null, grams: null, fee: 0, note: "追加充值" },
+  { id: "AU-D-20251009", type: "deposit", date: "2025-10-09 20:00:06", amount: 2000,  price: null, grams: null, fee: 0, note: "追加充值" },
+  { id: "AU-D-20251015", type: "deposit", date: "2025-10-15 18:49:28", amount: 3000,  price: null, grams: null, fee: 0, note: "追加充值" },
+  { id: "AU-D-20251109", type: "deposit", date: "2025-11-09 19:13:34", amount: 3500,  price: null, grams: null, fee: 0, note: "追加充值" },
+  { id: "AU-D-20251208", type: "deposit", date: "2025-12-08 19:15:12", amount: 3600,  price: null, grams: null, fee: 0, note: "追加充值" },
+  { id: "AU-D-20251214", type: "deposit", date: "2025-12-14 19:03:04", amount: 300,   price: null, grams: null, fee: 0, note: "追加充值" },
+  { id: "AU-D-20260108", type: "deposit", date: "2026-01-08 21:06:23", amount: 3000,  price: null, grams: null, fee: 0, note: "追加充值" },
+  { id: "AU-D-20260201", type: "deposit", date: "2026-02-01 10:02:25", amount: 1500,  price: null, grams: null, fee: 0, note: "追加充值" },
+  { id: "AU-D-20260205", type: "deposit", date: "2026-02-05 14:20:00", amount: 20000, price: null, grams: null, fee: 0, note: "分批转入" },
+  { id: "AU-D-20260206", type: "deposit", date: "2026-02-06 10:15:00", amount: 15000, price: null, grams: null, fee: 0, note: "分批转入" },
+  { id: "AU-D-20260206b", type: "deposit", date: "2026-02-06 17:13:30", amount: 15000, price: null, grams: null, fee: 0, note: "分批转入" },
+  { id: "AU-D-20260213", type: "deposit", date: "2026-02-13 16:05:39", amount: 3000,  price: null, grams: null, fee: 0, note: "追加充值" },
+  { id: "AU-D-20260216", type: "deposit", date: "2026-02-16 21:25:56", amount: 2000,  price: null, grams: null, fee: 0, note: "追加充值" },
+
+  // 买入记录（价格单位 ¥/克，grams 克数）
+  { id: "AU-B-20250816", type: "buy",  date: "2025-08-16 10:22:00", amount: 4812,   price: 589.3, grams: 8.166,  fee: 4.81, note: "首次建仓" },
+  { id: "AU-B-20250910", type: "buy",  date: "2025-09-10 14:05:00", amount: 3150,   price: 604.5, grams: 5.211,  fee: 3.15, note: "追涨加仓" },
+  { id: "AU-B-20251012", type: "buy",  date: "2025-10-12 09:40:00", amount: 5280,   price: 623.8, grams: 8.464,  fee: 5.28, note: "突破加仓" },
+  { id: "AU-B-20251110", type: "buy",  date: "2025-11-10 11:30:00", amount: 6800,   price: 648.2, grams: 10.490, fee: 6.80, note: "回调补仓" },
+  { id: "AU-B-20251210", type: "buy",  date: "2025-12-10 15:20:00", amount: 7560,   price: 661.4, grams: 11.430, fee: 7.56, note: "低位加仓" },
+  { id: "AU-B-20260110", type: "buy",  date: "2026-01-10 10:08:00", amount: 8200,   price: 672.0, grams: 12.202, fee: 8.20, note: "新年建仓" },
+  { id: "AU-B-20260207", type: "buy",  date: "2026-02-07 11:15:00", amount: 24500,  price: 688.5, grams: 35.588, fee: 24.50, note: "大额买入·主仓" },
+  { id: "AU-B-20260208", type: "buy",  date: "2026-02-08 09:30:00", amount: 24500,  price: 691.0, grams: 35.455, fee: 24.50, note: "大额买入·补仓" },
+  { id: "AU-B-20260214", type: "buy",  date: "2026-02-14 14:00:00", amount: 4880,   price: 698.2, grams: 6.990,  fee: 4.88, note: "节后追涨" },
+  { id: "AU-B-20260217", type: "buy",  date: "2026-02-17 16:00:00", amount: 3840,   price: 703.5, grams: 5.459,  fee: 3.84, note: "高位补入" },
+
+  // 卖出记录
+  { id: "AU-S-20251025", type: "sell", date: "2025-10-25 15:30:00", amount: 2230,   price: 635.4, grams: 3.509,  fee: 2.23, note: "止盈出场", costBasis: 604.5 },
+  { id: "AU-S-20260115", type: "sell", date: "2026-01-15 10:45:00", amount: 3450,   price: 679.8, grams: 5.075,  fee: 3.45, note: "节前兑现", costBasis: 648.2 },
+];
+
+let goldTxCurrentPage = 1;
+let goldTxCurrentFilter = "all";
+const GOLD_TX_PAGE_SIZE = 8;
+
+function renderGoldTransactions(filter = "all", page = 1) {
+  goldTxCurrentFilter = filter;
+  const list    = document.getElementById("goldTxList");
+  const summary = document.getElementById("goldTxSummary");
+  if (!list || !summary) return;
+
+  const sorted = GOLD_TRANSACTIONS
+    .filter(t => filter === "all" || t.type === filter)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const totalPages = Math.ceil(sorted.length / GOLD_TX_PAGE_SIZE);
+  goldTxCurrentPage = Math.min(Math.max(1, page), totalPages || 1);
+  const paged = sorted.slice((goldTxCurrentPage - 1) * GOLD_TX_PAGE_SIZE, goldTxCurrentPage * GOLD_TX_PAGE_SIZE);
+
+  list.innerHTML = paged.map(tx => {
+    const dirIcon = tx.type === "buy"
+      ? `<svg class="tx-dir-icon tx-dir-buy" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 9l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+      : tx.type === "sell"
+      ? `<svg class="tx-dir-icon tx-dir-sell" viewBox="0 0 16 16" fill="none"><path d="M8 13V3M3 7l5-5 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+      : `<svg class="tx-dir-icon tx-dir-dep" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M4 7l4 4 4-4M2 13h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+    if (tx.type === "deposit") {
+      return `
+      <div class="tx-row tx-row-deposit">
+        <div class="tx-icon-wrap tx-deposit">${dirIcon}</div>
+        <div class="tx-body">
+          <div class="tx-main-row">
+            <div class="tx-pair-col">
+              <span class="tx-type-label tx-deposit">充值</span>
+              <span class="tx-pair">CNY → 黄金账户</span>
+            </div>
+            <div class="tx-qty-col">
+              <div class="tx-qty-val tx-dep-color">+¥${tx.amount.toLocaleString("zh-CN")}</div>
+              <div class="tx-qty-sub">${tx.note}</div>
+            </div>
+          </div>
+          <div class="tx-meta-row">
+            <span class="tx-meta-item tx-date">${tx.date}</span>
+            <span class="tx-meta-sep">·</span>
+            <span class="tx-meta-item tx-id">${tx.id}</span>
+            <span class="tx-status tx-done">✓ 已到账</span>
+          </div>
+        </div>
+      </div>`;
+    } else if (tx.type === "buy") {
+      return `
+      <div class="tx-row tx-row-buy">
+        <div class="tx-icon-wrap tx-buy">${dirIcon}</div>
+        <div class="tx-body">
+          <div class="tx-main-row">
+            <div class="tx-pair-col">
+              <span class="tx-type-label tx-buy">买入</span>
+              <span class="tx-pair">XAU / CNY</span>
+            </div>
+            <div class="tx-qty-col">
+              <div class="tx-qty-val tx-buy-color">+${tx.grams.toFixed(3)} 克</div>
+              <div class="tx-qty-sub">花费 ¥${tx.amount.toLocaleString("zh-CN")}</div>
+            </div>
+          </div>
+          <div class="tx-detail-row">
+            <div class="tx-detail-item"><span class="tx-d-label">均价</span><span class="tx-d-val">¥${tx.price.toFixed(2)}/克</span></div>
+            <div class="tx-detail-item"><span class="tx-d-label">数量</span><span class="tx-d-val">${tx.grams.toFixed(3)} 克</span></div>
+            <div class="tx-detail-item"><span class="tx-d-label">手续费</span><span class="tx-d-val">¥${tx.fee.toFixed(2)}</span></div>
+          </div>
+          <div class="tx-meta-row">
+            <span class="tx-meta-item">${tx.note}</span>
+            <span class="tx-meta-sep">·</span>
+            <span class="tx-meta-item tx-date">${tx.date}</span>
+            <span class="tx-meta-sep">·</span>
+            <span class="tx-meta-item tx-id">${tx.id}</span>
+            <span class="tx-status tx-done">✓ 已成交</span>
+          </div>
+        </div>
+      </div>`;
+    } else {
+      let pnlBadgeHtml = "", realizedPnlHtml = "";
+      if (tx.costBasis) {
+        const pnl    = (tx.price - tx.costBasis) * tx.grams - tx.fee;
+        const pnlPct = ((tx.price - tx.costBasis) / tx.costBasis) * 100;
+        const isProfit = pnl >= 0;
+        const sign = isProfit ? "+" : "";
+        const pnlCls = isProfit ? "tx-pnl-profit" : "tx-pnl-loss";
+        pnlBadgeHtml    = `<span class="tx-pnl-badge ${isProfit ? "profit" : "loss"}">${isProfit ? "盈利" : "亏损"} ${sign}${pnlPct.toFixed(2)}%</span>`;
+        realizedPnlHtml = `<div class="tx-detail-item"><span class="tx-d-label">已实现盈亏</span><span class="tx-d-val ${pnlCls}">${sign}¥${pnl.toFixed(2)} (${sign}${pnlPct.toFixed(2)}%)</span></div>`;
+      }
+      const received = (tx.amount - tx.fee).toFixed(2);
+      return `
+      <div class="tx-row tx-row-sell">
+        <div class="tx-icon-wrap tx-sell">${dirIcon}</div>
+        <div class="tx-body">
+          <div class="tx-main-row">
+            <div class="tx-pair-col">
+              <span class="tx-type-label tx-sell">卖出</span>
+              <span class="tx-pair">XAU / CNY</span>
+            </div>
+            <div class="tx-qty-col">
+              <div class="tx-qty-val tx-sell-color">-${tx.grams.toFixed(3)} 克</div>
+              <div class="tx-qty-sub">到账 ¥${parseFloat(received).toLocaleString("zh-CN",{minimumFractionDigits:2})}</div>
+            </div>
+          </div>
+          <div class="tx-detail-row">
+            <div class="tx-detail-item"><span class="tx-d-label">成交价</span><span class="tx-d-val">¥${tx.price.toFixed(2)}/克</span></div>
+            <div class="tx-detail-item"><span class="tx-d-label">数量</span><span class="tx-d-val">${tx.grams.toFixed(3)} 克</span></div>
+            <div class="tx-detail-item"><span class="tx-d-label">手续费</span><span class="tx-d-val">¥${tx.fee.toFixed(2)}</span></div>
+            ${realizedPnlHtml}
+          </div>
+          ${pnlBadgeHtml ? `<div class="tx-pnl-row">${pnlBadgeHtml}</div>` : ""}
+          <div class="tx-meta-row">
+            <span class="tx-meta-item">${tx.note}</span>
+            <span class="tx-meta-sep">·</span>
+            <span class="tx-meta-item tx-date">${tx.date}</span>
+            <span class="tx-meta-sep">·</span>
+            <span class="tx-meta-item tx-id">${tx.id}</span>
+            <span class="tx-status tx-done">✓ 已成交</span>
+          </div>
+        </div>
+      </div>`;
+    }
+  }).join("");
+
+  // 汇总（累计充值、累计买入、净持仓、盈亏）
+  const buyTxs  = GOLD_TRANSACTIONS.filter(t => t.type === "buy");
+  const sellTxs = GOLD_TRANSACTIONS.filter(t => t.type === "sell");
+  const depTxs  = GOLD_TRANSACTIONS.filter(t => t.type === "deposit");
+  const totalGrams = buyTxs.reduce((s,t) => s + t.grams, 0) - sellTxs.reduce((s,t) => s + t.grams, 0);
+  const totalBuy   = buyTxs.reduce((s,t)=>s+t.amount,0);
+  const totalDep   = depTxs.reduce((s,t)=>s+t.amount,0);
+  const { holdCost } = calcGoldPortfolio();
+  const goldVal = goldPriceCNY ? totalGrams * goldPriceCNY : 0;
+  const goldPnl = goldPriceCNY ? goldVal - holdCost : 0;
+  const goldPnlPct = holdCost > 0 ? (goldPnl / holdCost) * 100 : 0;
+  const pnlSign = goldPnl >= 0 ? "+" : "";
+  const pnlCls = goldPnl >= 0 ? "tx-buy-color" : "tx-sell-color";
+  summary.innerHTML = `
+    <div class="tx-sum-row">
+      <div class="ts-item"><div class="ts-label">累计充值</div><div class="ts-value tx-dep-color">¥${totalDep.toLocaleString("zh-CN")}</div></div>
+      <div class="ts-item"><div class="ts-label">累计买入</div><div class="ts-value tx-buy-color">¥${totalBuy.toLocaleString("zh-CN")}</div></div>
+      <div class="ts-item"><div class="ts-label">净持仓</div><div class="ts-value">${totalGrams.toFixed(3)} 克</div></div>
+      <div class="ts-item"><div class="ts-label">盈亏</div><div class="ts-value ${pnlCls}">${goldPriceCNY ? pnlSign + "¥" + Math.abs(goldPnl).toLocaleString("zh-CN") + " (" + pnlSign + goldPnlPct.toFixed(2) + "%)" : "—"}</div></div>
+    </div>`;
+
+  renderGoldTxPagination(sorted.length, totalPages);
+}
+
+function renderGoldTxPagination(total, totalPages) {
+  let el = document.getElementById("goldTxPagination");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "goldTxPagination";
+    el.className = "tx-pagination";
+    document.getElementById("goldTxSummary")?.after(el);
+  }
+  if (totalPages <= 1) { el.innerHTML = ""; return; }
+  const pages = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || Math.abs(i - goldTxCurrentPage) <= 1) pages.push(i);
+    else if (pages[pages.length - 1] !== "…") pages.push("…");
+  }
+  el.innerHTML = `
+    <div class="tx-page-info">第 ${goldTxCurrentPage} / ${totalPages} 页 · 共 ${total} 条</div>
+    <div class="tx-page-btns">
+      <button class="tx-page-btn" ${goldTxCurrentPage===1?"disabled":""} onclick="renderGoldTransactions('${goldTxCurrentFilter}',${goldTxCurrentPage-1})">‹ 上一页</button>
+      ${pages.map(p => p==="…" ? `<span class="tx-page-ellipsis">…</span>` : `<button class="tx-page-btn ${p===goldTxCurrentPage?"active":""}" onclick="renderGoldTransactions('${goldTxCurrentFilter}',${p})">${p}</button>`).join("")}
+      <button class="tx-page-btn" ${goldTxCurrentPage===totalPages?"disabled":""} onclick="renderGoldTransactions('${goldTxCurrentFilter}',${goldTxCurrentPage+1})">下一页 ›</button>
+    </div>`;
+}
+
+function initGoldTxFilter() {
+  document.querySelectorAll(".gold-filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".gold-filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderGoldTransactions(btn.dataset.filter, 1);
+    });
+  });
+}
+
+function initAssetTabs() {
+  const btnBtc  = document.getElementById("datBtc");
+  const btnGold = document.getElementById("datGold");
+  const panelBtc  = document.getElementById("panelBtc");
+  const panelGold = document.getElementById("panelGold");
+
+  btnBtc?.addEventListener("click", () => {
+    btnBtc.classList.add("dat-active");
+    btnGold.classList.remove("dat-active");
+    panelBtc.style.display  = "";
+    panelGold.style.display = "none";
+  });
+
+  btnGold?.addEventListener("click", async () => {
+    btnGold.classList.add("dat-active");
+    btnBtc.classList.remove("dat-active");
+    panelGold.style.display = "";
+    panelBtc.style.display  = "none";
+    // 先拉金价再渲染，这样汇总里的盈亏能正确显示
+    await fetchGoldPriceSmall();
+    renderGoldTransactions(goldTxCurrentFilter, goldTxCurrentPage);
+    updateBalanceCard();
+  });
+}
+
+// ── 黄金实时价格（供首页卡 + 资产卡共用）──
+let goldPriceCNY = null; // ¥/克，全局缓存
+
+function calcGoldPortfolio() {
+  const buyTxs  = GOLD_TRANSACTIONS.filter(t => t.type === "buy");
+  const sellTxs = GOLD_TRANSACTIONS.filter(t => t.type === "sell");
+  const netGrams   = buyTxs.reduce((s, t) => s + t.grams, 0)
+                   - sellTxs.reduce((s, t) => s + t.grams, 0);
+  const totalBuyCNY  = buyTxs.reduce((s, t) => s + t.amount, 0);
+  const totalSellCostCNY = sellTxs.reduce((s, t) => s + t.grams * (t.costBasis || 0), 0);
+  const holdCost = totalBuyCNY - totalSellCostCNY;
+  return { netGrams, holdCost, totalBuyCNY };
+}
+
+async function fetchGoldPriceSmall() {
+  try {
+    let usdPerOz = null;
+
+    // 主：gold-api.com（免费，无需 key，实时）
+    try {
+      const res = await fetch("https://api.gold-api.com/price/XAU", { cache: "no-store" });
+      if (res.ok) {
+        const d = await res.json();
+        usdPerOz = d?.price;  // 返回 USD/盎司
+      }
+    } catch {}
+
+    // 备用：metals.live
+    if (!usdPerOz) {
+      try {
+        const res = await fetch("https://api.metals.live/v1/spot/gold", { cache: "no-store" });
+        if (res.ok) {
+          const d = await res.json();
+          usdPerOz = d && d[0] && d[0].gold;
+        }
+      } catch {}
+    }
+
+    if (!usdPerOz) throw new Error("no gold price");
+
+    goldPriceCNY = (usdPerOz / 31.1035) * cnyRate; // 转换为 ¥/克
+    set("goldPriceSmall", "XAU ¥" + goldPriceCNY.toFixed(2) + "/克");
+
+    // 动态计算持仓盈亏
+    const { netGrams, holdCost } = calcGoldPortfolio();
+    const goldVal = netGrams * goldPriceCNY;
+    const goldPnl = goldVal - holdCost;
+    const sign    = goldPnl >= 0 ? "+" : "";
+    const el = document.getElementById("goldPnlSmall");
+    if (el) {
+      el.textContent = sign + "¥" + Math.abs(goldPnl).toFixed(0)
+        + " (" + sign + ((goldPnl / holdCost) * 100).toFixed(2) + "%)";
+      el.style.color = goldPnl >= 0 ? "var(--profit)" : "var(--loss)";
+    }
+
+    // 同步更新余额卡里的黄金行
+    updateBalanceCard();
+  } catch {
+    set("goldPriceSmall", "XAU · 实时行情");
+  }
 }
 
 // ── 初始化 ──
@@ -786,6 +1141,7 @@ async function init() {
   fetchGlobalData();
   fetchBtcDetail();
   fetchFearGreed();
+  fetchGoldPriceSmall();
   renderHalvingCountdown();
   setTimeout(() => renderMarketNews("all"), 1500);
   initNewsFilter();
@@ -794,7 +1150,8 @@ async function init() {
   setInterval(fetchGlobalData,      120000);
   setInterval(fetchFearGreed,       300000);
   setInterval(() => renderMarketNews(), 60000);
-  setInterval(renderHalvingCountdown, 600000); // 每10分钟更新减半倒计时
+  setInterval(renderHalvingCountdown, 600000);
+  setInterval(fetchGoldPriceSmall,  180000); // 黄金价格每3分钟更新
 
   document.getElementById("refreshBtn")?.addEventListener("click", () => {
     fetchPrice(); fetchGlobalData(); fetchBtcDetail(); fetchFearGreed();
@@ -805,6 +1162,8 @@ async function init() {
   initNavDropdown();
   initDrawer();
   initTxFilter();
+  initGoldTxFilter();
+  initAssetTabs();
 }
 
 init();
