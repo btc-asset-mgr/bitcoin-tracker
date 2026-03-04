@@ -556,6 +556,57 @@ body {
 .news-text  { font-size: 0.76rem; color: var(--text-muted); line-height: 1.45; }
 .news-time  { font-size: 0.68rem; color: var(--text-muted); flex-shrink: 0; padding-top: 2px; white-space: nowrap; }
 
+/* ── 翻页控件 ── */
+.tx-pagination {
+  padding: 14px 16px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.tx-page-info {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.tx-page-btns {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.tx-page-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 32px;
+}
+.tx-page-btn:hover:not(:disabled) {
+  background: rgba(99,102,241,0.15);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.tx-page-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.tx-page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.tx-page-ellipsis {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  padding: 0 4px;
+}
+
 /* ── Colors ── */
 .profit { color: var(--profit) !important; }
 .loss   { color: var(--loss)   !important; }

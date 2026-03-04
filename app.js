@@ -1,7 +1,7 @@
 // ── 持仓配置 ──
 const PORTFOLIO = {
-  investmentCNY: 70000,
-  investmentUSD: 9627.03,
+  investmentCNY: 153900,
+  investmentUSD: 21170.56,
   btcAmount:     0.1050,
   avgCost:       91686.00,
   entryDate:     "2025-08-05",
@@ -485,6 +485,23 @@ const TRANSACTIONS = [
   { id: "TXN-20250804-005", type: "deposit", date: "2025-08-04 09:20:44", amount: 20000, price: null, btcQty: null, fee: 0, note: "建仓前追加" },
   // 累计入金 ¥70,000 → 换汇约 $9,628 USDT
 
+  // ── 2025年8月～2026年2月 · 持续追加入金 ──
+  { id: "TXN-20250814-D01", type: "deposit", date: "2025-08-14 21:34:02", amount: 3000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
+  { id: "TXN-20250901-D02", type: "deposit", date: "2025-09-01 17:49:09", amount: 2000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
+  { id: "TXN-20250908-D03", type: "deposit", date: "2025-09-08 16:48:18", amount: 3000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
+  { id: "TXN-20251008-D04", type: "deposit", date: "2025-10-08 09:54:37", amount: 3000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
+  { id: "TXN-20251009-D05", type: "deposit", date: "2025-10-09 20:00:06", amount: 2000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
+  { id: "TXN-20251015-D06", type: "deposit", date: "2025-10-15 18:49:28", amount: 3000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
+  { id: "TXN-20251109-D07", type: "deposit", date: "2025-11-09 19:13:34", amount: 3500,  price: null, btcQty: null, fee: 0, note: "追加充值" },
+  { id: "TXN-20251208-D08", type: "deposit", date: "2025-12-08 19:15:12", amount: 3600,  price: null, btcQty: null, fee: 0, note: "追加充值" },
+  { id: "TXN-20251214-D09", type: "deposit", date: "2025-12-14 19:03:04", amount: 300,   price: null, btcQty: null, fee: 0, note: "追加充值" },
+  { id: "TXN-20260108-D10", type: "deposit", date: "2026-01-08 21:06:23", amount: 3000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
+  { id: "TXN-20260201-D11", type: "deposit", date: "2026-02-01 10:02:25", amount: 1500,  price: null, btcQty: null, fee: 0, note: "追加充值" },
+  { id: "TXN-20260206-D12", type: "deposit", date: "2026-02-06 17:13:30", amount: 50000, price: null, btcQty: null, fee: 0, note: "大额追加充值" },
+  { id: "TXN-20260213-D13", type: "deposit", date: "2026-02-13 16:05:39", amount: 3000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
+  { id: "TXN-20260216-D14", type: "deposit", date: "2026-02-16 21:25:56", amount: 2000,  price: null, btcQty: null, fee: 0, note: "追加充值" },
+  // 新增入金合计 ¥83,900，累计总入金 ¥153,900
+
   // ── 2025年7月 · 小额试仓感受市场 ──
   { id: "TXN-20250712-006", type: "buy",  date: "2025-07-12 14:33:08", amount: 688.00,  price: 86000.00, btcQty: 0.00800000, fee: 0.69, note: "市价买入 · 小额试仓" },
   { id: "TXN-20250720-007", type: "sell", date: "2025-07-20 10:18:55", amount: 713.60,  price: 89200.00, btcQty: 0.00800000, fee: 0.71, note: "止盈出场", costBasis: 86000.00 },
@@ -526,7 +543,15 @@ const TRANSACTIONS = [
   { id: "TXN-20260303-029", type: "buy",  date: "2026-03-03 09:30:44", amount: 341.00,  price: 68200.00, btcQty: 0.00500000, fee: 0.34, note: "限价买入 · 大跌抄底" },
 ];
 
-function renderTransactions(filter = "all") {
+// ── 翻页状态 ──
+let txCurrentPage = 1;
+const TX_PAGE_SIZE = 8;
+let txCurrentFilter = "all";
+
+function renderTransactions(filter = "all", page = 1) {
+  txCurrentFilter = filter;
+  txCurrentPage   = page;
+
   const list    = document.getElementById("txList");
   const summary = document.getElementById("txSummary");
   if (!list) return;
@@ -535,9 +560,13 @@ function renderTransactions(filter = "all") {
     .filter(t => filter === "all" || t.type === filter)
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  const totalPages = Math.ceil(sorted.length / TX_PAGE_SIZE);
+  txCurrentPage = Math.min(Math.max(1, page), totalPages || 1);
+  const paged = sorted.slice((txCurrentPage - 1) * TX_PAGE_SIZE, txCurrentPage * TX_PAGE_SIZE);
+
   const typeLabel = { buy: "买入", sell: "卖出", deposit: "充值" };
 
-  list.innerHTML = sorted.map(tx => {
+  list.innerHTML = paged.map(tx => {
     // 左侧方向图标
     const dirIcon = tx.type === "buy"
       ? `<svg class="tx-dir-icon tx-dir-buy" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 9l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
@@ -662,8 +691,42 @@ function renderTransactions(filter = "all") {
       <div class="ts-item"><div class="ts-label">累计手续费</div><div class="ts-value">$${totalFee.toFixed(4)}</div></div>
     </div>`;
 
+  // 翻页控件
+  renderTxPagination(sorted.length, totalPages);
+
   // 更新账户余额卡片
   updateBalanceCard();
+}
+
+function renderTxPagination(total, totalPages) {
+  let el = document.getElementById("txPagination");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "txPagination";
+    el.className = "tx-pagination";
+    document.getElementById("txSummary")?.after(el);
+  }
+  if (totalPages <= 1) { el.innerHTML = ""; return; }
+
+  const pages = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || Math.abs(i - txCurrentPage) <= 1) {
+      pages.push(i);
+    } else if (pages[pages.length - 1] !== "…") {
+      pages.push("…");
+    }
+  }
+
+  el.innerHTML = `
+    <div class="tx-page-info">第 ${txCurrentPage} / ${totalPages} 页 · 共 ${total} 条</div>
+    <div class="tx-page-btns">
+      <button class="tx-page-btn" ${txCurrentPage === 1 ? "disabled" : ""} onclick="renderTransactions('${txCurrentFilter}', ${txCurrentPage - 1})">‹ 上一页</button>
+      ${pages.map(p => p === "…"
+        ? `<span class="tx-page-ellipsis">…</span>`
+        : `<button class="tx-page-btn ${p === txCurrentPage ? "active" : ""}" onclick="renderTransactions('${txCurrentFilter}', ${p})">${p}</button>`
+      ).join("")}
+      <button class="tx-page-btn" ${txCurrentPage === totalPages ? "disabled" : ""} onclick="renderTransactions('${txCurrentFilter}', ${txCurrentPage + 1})">下一页 ›</button>
+    </div>`;
 }
 
 function updateBalanceCard() {
@@ -710,10 +773,10 @@ function initTxFilter() {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tx-filter-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      renderTransactions(btn.dataset.filter);
+      renderTransactions(btn.dataset.filter, 1); // 切换筛选时回到第1页
     });
   });
-  renderTransactions("all");
+  renderTransactions("all", 1);
 }
 
 // ── 初始化 ──
