@@ -860,6 +860,8 @@ const GOLD_TRANSACTIONS = [
   { id: "AU-B-20260208", type: "buy",  date: "2026-02-08 09:30:00", amount: 24500,  price: 691.0, grams: 35.455, fee: 24.50, note: "大额买入·补仓" },
   { id: "AU-B-20260214", type: "buy",  date: "2026-02-14 14:00:00", amount: 4880,   price: 698.2, grams: 6.990,  fee: 4.88, note: "节后追涨" },
   { id: "AU-B-20260217", type: "buy",  date: "2026-02-17 16:00:00", amount: 3840,   price: 703.5, grams: 5.459,  fee: 3.84, note: "高位补入" },
+  // 夜盘交易（上金所 20:00–02:30 夜盘时段）
+  { id: "AU-B-20260218", type: "buy",  date: "2026-02-18 00:15:32", amount: 2100,   price: 700.0, grams: 3.000,  fee: 2.10, note: "夜盘挂单成交" },
 
   // 卖出记录
   { id: "AU-S-20251025", type: "sell", date: "2025-10-25 15:30:00", amount: 2230,   price: 635.4, grams: 3.509,  fee: 2.23, note: "止盈出场", costBasis: 604.5 },
