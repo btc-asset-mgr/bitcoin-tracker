@@ -1155,15 +1155,43 @@ function calcGoldAvgCost() {
 }
 
 async function fetchGoldHistory(days) {
-  // CoinGecko XAU/CNY 历史行情
-  const to   = Math.floor(Date.now() / 1000);
-  const from = to - days * 86400;
-  const url  = `https://api.coingecko.com/api/v3/coins/gold/market_chart/range?vs_currency=cny&from=${from}&to=${to}&precision=2`;
-  const res  = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error("coingecko gold " + res.status);
-  const prices = (await res.json()).prices; // [[ts, price_per_troy_oz_cny], ...]
-  // 转换为 ¥/克（1 troy oz = 31.1035 g）
-  return prices.map(([ts, p]) => ({ t: ts, v: +(p / 31.1035).toFixed(2) }));
+  // 数据源：freegoldapi.com（USD/盎司，年度历史），补充实时价格
+  const res = await fetch("https://freegoldapi.com/data/latest.json", { cache: "no-store" });
+  if (!res.ok) throw new Error("freegoldapi " + res.status);
+  const all = await res.json(); // [{ date, price(USD/oz) }]
+
+  // 过滤近 N 天
+  const cutoff = Date.now() - days * 86400000;
+  let filtered = all.filter(d => new Date(d.date).getTime() >= cutoff);
+
+  // 若数据不足 5 条（如选7天但接口只到上周），放宽到最近 14 天兜底
+  if (filtered.length < 5) {
+    const cutoff2 = Date.now() - 14 * 86400000;
+    filtered = all.filter(d => new Date(d.date).getTime() >= cutoff2);
+  }
+
+  // 补充今日实时价格（gold-api.com）
+  try {
+    const r2 = await fetch("https://api.gold-api.com/price/XAU", { cache: "no-store" });
+    if (r2.ok) {
+      const d2 = await r2.json();
+      if (d2?.price) {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        // 避免重复追加今日
+        if (!filtered.length || filtered[filtered.length - 1].date !== todayStr) {
+          filtered.push({ date: todayStr, price: d2.price });
+        } else {
+          filtered[filtered.length - 1].price = d2.price;
+        }
+      }
+    }
+  } catch {}
+
+  // 转换：USD/oz → ¥/克
+  return filtered.map(d => ({
+    t: new Date(d.date).getTime(),
+    v: +(d.price / 31.1035 * cnyRate).toFixed(2)
+  }));
 }
 
 function renderGoldPriceChart(data, avgCost) {
