@@ -1,9 +1,9 @@
 // ── 持仓配置 ──
 const PORTFOLIO = {
-  investmentCNY: 153900,
-  investmentUSD: 21170.56,
-  btcAmount:     0.1050,
-  avgCost:       91686.00,
+  investmentCNY: 168900,
+  investmentUSD: 20643.15,
+  btcAmount:     0.1040,
+  avgCost:       91517.55,
   entryDate:     "2025-08-05",
   cnyRate:       7.27
 };
@@ -567,6 +567,9 @@ const TRANSACTIONS = [
 
   // ── 2026年3月 · 持续抄底 ──
   { id: "TXN-20260303-029", type: "buy",  date: "2026-03-03 09:30:44", amount: 341.00,  price: 68200.00, btcQty: 0.00500000, fee: 0.34, note: "限价买入 · 大跌抄底" },
+  { id: "TXN-20260301-030", type: "buy",  date: "2026-03-01 09:30:44", amount: 441.00,  price: 88200.00, btcQty: 0.00500000, fee: 0.34, note: "市价买入 · 反弹低吸" },
+  { id: "TXN-20260306-031", type: "sell", date: "2026-03-06 13:30:00", amount: 568.41,  price: 94735.00, btcQty: 0.00600000, fee: 0.57, note: "止盈出场", costBasis: 68200.00 },
+  { id: "TXN-20260306-032", type: "deposit", date: "2026-03-06 14:33:00", amount: 15000, price: null, btcQty: null, fee: 0, note: "追加充值 · 待建仓" },
 ];
 
 // ── 翻页状态 ──
@@ -848,6 +851,7 @@ const GOLD_TRANSACTIONS = [
   { id: "AU-D-20260206b", type: "deposit", date: "2026-02-06 17:13:30", amount: 15000, price: null, grams: null, fee: 0, note: "分批转入" },
   { id: "AU-D-20260213", type: "deposit", date: "2026-02-13 16:05:39", amount: 3000,  price: null, grams: null, fee: 0, note: "追加充值" },
   { id: "AU-D-20260216", type: "deposit", date: "2026-02-16 21:25:56", amount: 2000,  price: null, grams: null, fee: 0, note: "追加充值" },
+  { id: "AU-D-20260306", type: "deposit", date: "2026-03-06 14:33:00", amount: 7500,  price: null, grams: null, fee: 0, note: "追加充值 · 黄金建仓" },
 
   // 买入记录（价格单位 ¥/克，grams 克数）
   { id: "AU-B-20250816", type: "buy",  date: "2025-08-16 10:22:00", amount: 4812,   price: 589.3, grams: 8.166,  fee: 4.81, note: "首次建仓" },
@@ -862,6 +866,8 @@ const GOLD_TRANSACTIONS = [
   { id: "AU-B-20260217", type: "buy",  date: "2026-02-17 16:00:00", amount: 3840,   price: 703.5, grams: 5.459,  fee: 3.84, note: "高位补入" },
   // 夜盘交易（上金所 20:00–02:30 夜盘时段）
   { id: "AU-B-20260218", type: "buy",  date: "2026-02-18 00:15:32", amount: 2100,   price: 700.0, grams: 3.000,  fee: 2.10, note: "夜盘挂单成交" },
+  // ── 2026年3月 ──
+  { id: "AU-B-20260306", type: "buy",  date: "2026-03-06 14:33:00", amount: 7500,   price: 1135.0, grams: 6.608,  fee: 7.50, note: "市价买入 · 高位加仓" },
 
   // 卖出记录
   { id: "AU-S-20251025", type: "sell", date: "2025-10-25 15:30:00", amount: 2230,   price: 635.4, grams: 3.509,  fee: 2.23, note: "止盈出场", costBasis: 604.5 },
