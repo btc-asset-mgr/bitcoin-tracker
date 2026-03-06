@@ -1195,7 +1195,8 @@ async function fetchGoldHistory(days) {
 }
 
 function renderGoldPriceChart(data, avgCost) {
-  const ctx = document.getElementById("goldPriceChart").getContext("2d");
+  if (!data || data.length < 2) return;
+
   const labels = data.map(d => new Date(d.t).toLocaleDateString("zh-CN", { month: "short", day: "numeric" }));
   const vals   = data.map(d => d.v);
   const high   = Math.max(...vals);
@@ -1218,64 +1219,48 @@ function renderGoldPriceChart(data, avgCost) {
   setClass("gmsPnl", "gms-val " + (pnl >= 0 ? "profit" : "loss"),
     (pnl >= 0 ? "+" : "") + "¥" + Math.abs(pnl).toFixed(0) + " (" + (pnl >= 0 ? "+" : "") + pnlPct.toFixed(2) + "%)");
 
-  // 均价参考线数据
   const avgLine = vals.map(() => +avgCost.toFixed(2));
 
-  // 买入标记点（在时间轴上最近的点）
-  const buyAnnotations = {};
-  GOLD_TRANSACTIONS.filter(t => t.type === "buy").forEach((tx, i) => {
-    const txTs = new Date(tx.date).getTime();
-    const closestIdx = data.reduce((best, d, idx) =>
-      Math.abs(d.t - txTs) < Math.abs(data[best].t - txTs) ? idx : best, 0);
-    buyAnnotations["buy" + i] = {
-      type: "point", xValue: closestIdx, yValue: data[closestIdx]?.v,
-      backgroundColor: "rgba(251,191,36,0.9)", radius: 5, borderWidth: 0,
-    };
-  });
-
-  const grad = ctx.createLinearGradient(0, 0, 0, 300);
-  grad.addColorStop(0, rising ? "rgba(251,191,36,0.25)" : "rgba(239,83,80,0.2)");
-  grad.addColorStop(1, "rgba(0,0,0,0)");
-
-  const chartData = {
-    labels,
-    datasets: [
-      {
-        label: "金价 ¥/克",
-        data: vals,
-        borderColor: rising ? "#f7b731" : "#ef5350",
-        borderWidth: 2,
-        backgroundColor: grad,
-        fill: true,
-        pointRadius: 0,
-        pointHoverRadius: 5,
-        tension: 0.35,
-        order: 1,
-      },
-      {
-        label: "我的均价",
-        data: avgLine,
-        borderColor: "rgba(99,102,241,0.75)",
-        borderWidth: 1.5,
-        borderDash: [5, 4],
-        backgroundColor: "transparent",
-        fill: false,
-        pointRadius: 0,
-        tension: 0,
-        order: 2,
-      },
-    ]
-  };
-
+  // 每次切换时间段必须销毁旧图再重建，避免 payload undefined 报错
   if (goldPriceChart) {
-    goldPriceChart.data = chartData;
-    goldPriceChart.update();
-    return;
+    goldPriceChart.destroy();
+    goldPriceChart = null;
   }
+
+  const ctx  = document.getElementById("goldPriceChart").getContext("2d");
+  const grad = ctx.createLinearGradient(0, 0, 0, 280);
+  grad.addColorStop(0, rising ? "rgba(251,191,36,0.22)" : "rgba(239,83,80,0.18)");
+  grad.addColorStop(1, "rgba(0,0,0,0)");
 
   goldPriceChart = new Chart(ctx, {
     type: "line",
-    data: chartData,
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "金价 ¥/克",
+          data: vals,
+          borderColor: rising ? "#f7b731" : "#ef5350",
+          borderWidth: 2,
+          backgroundColor: grad,
+          fill: true,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.35,
+        },
+        {
+          label: "我的均价",
+          data: avgLine,
+          borderColor: "rgba(99,102,241,0.8)",
+          borderWidth: 1.5,
+          borderDash: [5, 4],
+          backgroundColor: "transparent",
+          fill: false,
+          pointRadius: 0,
+          tension: 0,
+        },
+      ]
+    },
     options: {
       responsive: true,
       interaction: { mode: "index", intersect: false },
@@ -1284,14 +1269,20 @@ function renderGoldPriceChart(data, avgCost) {
         tooltip: {
           callbacks: {
             label: c => c.datasetIndex === 0
-              ? "金价: ¥" + c.raw.toFixed(2) + "/克"
-              : "均价: ¥" + c.raw.toFixed(2) + "/克"
+              ? "金价: ¥" + Number(c.raw).toFixed(2) + "/克"
+              : "均价: ¥" + Number(c.raw).toFixed(2) + "/克"
           }
         }
       },
       scales: {
-        x: { ticks: { color: "#64748b", font: { size: 10 }, maxRotation: 45, maxTicksLimit: 10 }, grid: { color: "rgba(255,255,255,0.04)" } },
-        y: { ticks: { color: "#64748b", font: { size: 10 }, callback: v => "¥" + v.toFixed(0) }, grid: { color: "rgba(255,255,255,0.04)" } }
+        x: {
+          ticks: { color: "#64748b", font: { size: 10 }, maxRotation: 45, maxTicksLimit: 10 },
+          grid: { color: "rgba(255,255,255,0.04)" }
+        },
+        y: {
+          ticks: { color: "#64748b", font: { size: 10 }, callback: v => "¥" + Number(v).toFixed(0) },
+          grid: { color: "rgba(255,255,255,0.04)" }
+        }
       }
     }
   });
