@@ -1142,6 +1142,180 @@ async function fetchGoldPriceSmall() {
   }
 }
 
+// ── 黄金历史走势图弹窗 ──
+let goldPriceChart = null;
+let goldModalDays  = 30;
+
+function calcGoldAvgCost() {
+  const buys  = GOLD_TRANSACTIONS.filter(t => t.type === "buy");
+  const sells = GOLD_TRANSACTIONS.filter(t => t.type === "sell");
+  const totalGrams = buys.reduce((s, t) => s + t.grams, 0) - sells.reduce((s, t) => s + t.grams, 0);
+  const totalCost  = buys.reduce((s, t) => s + t.amount, 0) - sells.reduce((s, t) => s + t.grams * (t.costBasis || 0), 0);
+  return totalGrams > 0 ? totalCost / totalGrams : 0;
+}
+
+async function fetchGoldHistory(days) {
+  // CoinGecko XAU/CNY 历史行情
+  const to   = Math.floor(Date.now() / 1000);
+  const from = to - days * 86400;
+  const url  = `https://api.coingecko.com/api/v3/coins/gold/market_chart/range?vs_currency=cny&from=${from}&to=${to}&precision=2`;
+  const res  = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("coingecko gold " + res.status);
+  const prices = (await res.json()).prices; // [[ts, price_per_troy_oz_cny], ...]
+  // 转换为 ¥/克（1 troy oz = 31.1035 g）
+  return prices.map(([ts, p]) => ({ t: ts, v: +(p / 31.1035).toFixed(2) }));
+}
+
+function renderGoldPriceChart(data, avgCost) {
+  const ctx = document.getElementById("goldPriceChart").getContext("2d");
+  const labels = data.map(d => new Date(d.t).toLocaleDateString("zh-CN", { month: "short", day: "numeric" }));
+  const vals   = data.map(d => d.v);
+  const high   = Math.max(...vals);
+  const low    = Math.min(...vals);
+  const last   = vals[vals.length - 1];
+  const first  = vals[0];
+  const chg    = ((last - first) / first * 100);
+  const rising = last >= first;
+
+  // 更新统计栏
+  set("gmsCurrentPrice", "¥" + last.toFixed(2) + "/克");
+  set("gmsHigh",  "¥" + high.toFixed(2));
+  set("gmsLow",   "¥" + low.toFixed(2));
+  setClass("gmsChange", "gms-val " + (chg >= 0 ? "profit" : "loss"),
+    (chg >= 0 ? "+" : "") + chg.toFixed(2) + "%");
+  set("gmsAvgCost", "¥" + avgCost.toFixed(2) + "/克");
+  const { netGrams, holdCost } = calcGoldPortfolio();
+  const pnl    = last * netGrams - holdCost;
+  const pnlPct = holdCost > 0 ? (pnl / holdCost * 100) : 0;
+  setClass("gmsPnl", "gms-val " + (pnl >= 0 ? "profit" : "loss"),
+    (pnl >= 0 ? "+" : "") + "¥" + Math.abs(pnl).toFixed(0) + " (" + (pnl >= 0 ? "+" : "") + pnlPct.toFixed(2) + "%)");
+
+  // 均价参考线数据
+  const avgLine = vals.map(() => +avgCost.toFixed(2));
+
+  // 买入标记点（在时间轴上最近的点）
+  const buyAnnotations = {};
+  GOLD_TRANSACTIONS.filter(t => t.type === "buy").forEach((tx, i) => {
+    const txTs = new Date(tx.date).getTime();
+    const closestIdx = data.reduce((best, d, idx) =>
+      Math.abs(d.t - txTs) < Math.abs(data[best].t - txTs) ? idx : best, 0);
+    buyAnnotations["buy" + i] = {
+      type: "point", xValue: closestIdx, yValue: data[closestIdx]?.v,
+      backgroundColor: "rgba(251,191,36,0.9)", radius: 5, borderWidth: 0,
+    };
+  });
+
+  const grad = ctx.createLinearGradient(0, 0, 0, 300);
+  grad.addColorStop(0, rising ? "rgba(251,191,36,0.25)" : "rgba(239,83,80,0.2)");
+  grad.addColorStop(1, "rgba(0,0,0,0)");
+
+  const chartData = {
+    labels,
+    datasets: [
+      {
+        label: "金价 ¥/克",
+        data: vals,
+        borderColor: rising ? "#f7b731" : "#ef5350",
+        borderWidth: 2,
+        backgroundColor: grad,
+        fill: true,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        tension: 0.35,
+        order: 1,
+      },
+      {
+        label: "我的均价",
+        data: avgLine,
+        borderColor: "rgba(99,102,241,0.75)",
+        borderWidth: 1.5,
+        borderDash: [5, 4],
+        backgroundColor: "transparent",
+        fill: false,
+        pointRadius: 0,
+        tension: 0,
+        order: 2,
+      },
+    ]
+  };
+
+  if (goldPriceChart) {
+    goldPriceChart.data = chartData;
+    goldPriceChart.update();
+    return;
+  }
+
+  goldPriceChart = new Chart(ctx, {
+    type: "line",
+    data: chartData,
+    options: {
+      responsive: true,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: c => c.datasetIndex === 0
+              ? "金价: ¥" + c.raw.toFixed(2) + "/克"
+              : "均价: ¥" + c.raw.toFixed(2) + "/克"
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: "#64748b", font: { size: 10 }, maxRotation: 45, maxTicksLimit: 10 }, grid: { color: "rgba(255,255,255,0.04)" } },
+        y: { ticks: { color: "#64748b", font: { size: 10 }, callback: v => "¥" + v.toFixed(0) }, grid: { color: "rgba(255,255,255,0.04)" } }
+      }
+    }
+  });
+}
+
+async function openGoldModal(days) {
+  goldModalDays = days || goldModalDays;
+  document.getElementById("goldModal")?.classList.add("gold-modal-open");
+  document.getElementById("goldModalOverlay")?.classList.add("gold-modal-open");
+  document.body.style.overflow = "hidden";
+
+  // 高亮当前按钮
+  document.querySelectorAll(".gold-range-btn").forEach(b => {
+    b.classList.toggle("active", parseInt(b.dataset.days) === goldModalDays);
+  });
+
+  const loading = document.getElementById("goldChartLoading");
+  const canvas  = document.getElementById("goldPriceChart");
+  if (loading) loading.style.display = "flex";
+  if (canvas)  canvas.style.opacity = "0";
+
+  set("goldModalSub", "XAU / CNY · ¥/克 · 近" + goldModalDays + "天");
+
+  try {
+    const data    = await fetchGoldHistory(goldModalDays);
+    const avgCost = calcGoldAvgCost();
+    if (loading) loading.style.display = "none";
+    if (canvas)  canvas.style.opacity = "1";
+    renderGoldPriceChart(data, avgCost);
+  } catch {
+    if (loading) loading.innerHTML = '<span style="color:#ef5350">数据加载失败，请稍后重试</span>';
+  }
+}
+
+function closeGoldModal() {
+  document.getElementById("goldModal")?.classList.remove("gold-modal-open");
+  document.getElementById("goldModalOverlay")?.classList.remove("gold-modal-open");
+  document.body.style.overflow = "";
+}
+
+function initGoldModal() {
+  document.getElementById("goldChartBtn")?.addEventListener("click", e => {
+    e.preventDefault(); e.stopPropagation();
+    openGoldModal(30);
+  });
+  document.getElementById("goldModalClose")?.addEventListener("click", closeGoldModal);
+  document.getElementById("goldModalOverlay")?.addEventListener("click", closeGoldModal);
+  document.querySelectorAll(".gold-range-btn").forEach(btn => {
+    btn.addEventListener("click", () => openGoldModal(parseInt(btn.dataset.days)));
+  });
+}
+
 // ── 初始化 ──
 async function init() {
   await fetchCnyRate();
@@ -1172,6 +1346,7 @@ async function init() {
   initTxFilter();
   initGoldTxFilter();
   initAssetTabs();
+  initGoldModal();
 }
 
 init();

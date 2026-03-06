@@ -276,7 +276,7 @@
           </div>
           <span class="asw-badge">持仓中</span>
         </div>
-        <a class="asset-switch-card asset-switch-gold" href="../黄金投资/index.html" target="_blank">
+        <div class="asset-switch-card asset-switch-gold" id="goldCardMain">
           <div class="asw-icon">🥇</div>
           <div class="asw-body">
             <div class="asw-name">黄金</div>
@@ -284,9 +284,12 @@
           </div>
           <div class="asw-right">
             <div class="asw-gold-pnl" id="goldPnlSmall">—</div>
-            <span class="asw-badge asw-badge-gold">点击查看 →</span>
+            <button class="gold-chart-btn" id="goldChartBtn" title="查看黄金历史走势">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              走势图
+            </button>
           </div>
-        </a>
+        </div>
       </div>
 
       <!-- 减半倒计时 + 关键链上数据 -->
@@ -544,6 +547,76 @@
     <footer class="footer">
       <p>数据来源：CoinGecko · Alternative.me · 每 60 秒自动刷新 &nbsp;·&nbsp; 仅供参考，不构成投资建议</p>
     </footer>
+  </div>
+
+  <!-- 黄金走势图弹窗 -->
+  <div class="gold-modal-overlay" id="goldModalOverlay"></div>
+  <div class="gold-modal" id="goldModal">
+    <div class="gold-modal-header">
+      <div class="gold-modal-title">
+        <span class="gold-modal-icon">🥇</span>
+        <div>
+          <div class="gold-modal-name">黄金历史走势</div>
+          <div class="gold-modal-sub" id="goldModalSub">XAU / CNY · ¥/克</div>
+        </div>
+      </div>
+      <button class="gold-modal-close" id="goldModalClose">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- 时间范围切换 -->
+    <div class="gold-modal-range-bar">
+      <button class="gold-range-btn" data-days="7">7天</button>
+      <button class="gold-range-btn active" data-days="30">30天</button>
+      <button class="gold-range-btn" data-days="90">90天</button>
+      <button class="gold-range-btn" data-days="180">180天</button>
+      <button class="gold-range-btn" data-days="365">1年</button>
+    </div>
+
+    <!-- 统计数据行 -->
+    <div class="gold-modal-stats">
+      <div class="gms-item">
+        <div class="gms-label">当前价格</div>
+        <div class="gms-val" id="gmsCurrentPrice">—</div>
+      </div>
+      <div class="gms-item">
+        <div class="gms-label">区间最高</div>
+        <div class="gms-val profit" id="gmsHigh">—</div>
+      </div>
+      <div class="gms-item">
+        <div class="gms-label">区间最低</div>
+        <div class="gms-val loss" id="gmsLow">—</div>
+      </div>
+      <div class="gms-item">
+        <div class="gms-label">区间涨跌</div>
+        <div class="gms-val" id="gmsChange">—</div>
+      </div>
+      <div class="gms-item">
+        <div class="gms-label">我的均价</div>
+        <div class="gms-val" id="gmsAvgCost">—</div>
+      </div>
+      <div class="gms-item">
+        <div class="gms-label">持仓盈亏</div>
+        <div class="gms-val" id="gmsPnl">—</div>
+      </div>
+    </div>
+
+    <!-- 图表 -->
+    <div class="gold-modal-chart-wrap">
+      <div class="gold-chart-loading" id="goldChartLoading">
+        <div class="gold-chart-spinner"></div>
+        <span>加载历史数据中…</span>
+      </div>
+      <canvas id="goldPriceChart" height="200"></canvas>
+    </div>
+
+    <!-- 我的持仓买入标注说明 -->
+    <div class="gold-modal-legend">
+      <span class="gml-item"><span class="gml-dot gml-line"></span>金价走势</span>
+      <span class="gml-item"><span class="gml-dot gml-avg"></span>我的均价</span>
+      <span class="gml-item"><span class="gml-dot gml-buy"></span>买入时机</span>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>

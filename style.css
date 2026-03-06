@@ -408,8 +408,8 @@ body {
 .asw-name { font-size: 0.9rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
 .asw-sub  { font-size: 0.72rem; color: var(--text-muted); }
 .asw-gold-price { color: #D4AF37 !important; font-weight: 600; }
-.asw-right { text-align: right; flex-shrink: 0; }
-.asw-gold-pnl { font-size: 0.78rem; font-weight: 700; margin-bottom: 4px; }
+.asw-right { text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.asw-gold-pnl { font-size: 0.78rem; font-weight: 700; }
 .asw-badge {
   font-size: 0.62rem; font-weight: 700; padding: 2px 7px;
   border-radius: 10px; white-space: nowrap;
@@ -693,6 +693,191 @@ body {
   padding: 0 4px;
 }
 
+/* ── 黄金卡片走势按钮 ── */
+.gold-chart-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(251,191,36,0.15);
+  border: 1px solid rgba(251,191,36,0.35);
+  color: #f7b731;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+.gold-chart-btn:hover {
+  background: rgba(251,191,36,0.28);
+  border-color: rgba(251,191,36,0.6);
+  transform: translateY(-1px);
+}
+
+/* ── 黄金走势图弹窗遮罩 ── */
+.gold-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 1100;
+  backdrop-filter: blur(3px);
+}
+.gold-modal-overlay.gold-modal-open { display: block; }
+
+/* ── 弹窗主体 ── */
+.gold-modal {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -48%) scale(0.96);
+  opacity: 0;
+  width: min(680px, 96vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  z-index: 1101;
+  padding: 20px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.55);
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+.gold-modal.gold-modal-open {
+  display: block;
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+/* 弹窗头部 */
+.gold-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.gold-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gold-modal-icon { font-size: 1.6rem; }
+.gold-modal-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.gold-modal-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+.gold-modal-close {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 8px;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.gold-modal-close:hover { background: rgba(239,83,80,0.15); color: #ef5350; }
+
+/* 时间范围切换 */
+.gold-modal-range-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.gold-range-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.gold-range-btn:hover { color: #f7b731; border-color: rgba(251,191,36,0.4); }
+.gold-range-btn.active {
+  background: rgba(251,191,36,0.18);
+  border-color: rgba(251,191,36,0.5);
+  color: #f7b731;
+  font-weight: 600;
+}
+
+/* 统计数据行 */
+.gold-modal-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.gms-item { display: flex; flex-direction: column; gap: 2px; }
+.gms-label { font-size: 0.7rem; color: var(--text-muted); }
+.gms-val { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+
+/* 图表区域 */
+.gold-modal-chart-wrap {
+  position: relative;
+  min-height: 220px;
+}
+.gold-chart-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+.gold-chart-spinner {
+  width: 28px; height: 28px;
+  border: 3px solid rgba(255,255,255,0.08);
+  border-top-color: #f7b731;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#goldPriceChart { transition: opacity 0.3s; }
+
+/* 图例 */
+.gold-modal-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.gml-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.gml-dot {
+  width: 20px; height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.gml-line { background: #f7b731; }
+.gml-avg  { background: rgba(99,102,241,0.75); border-top: 2px dashed rgba(99,102,241,0.75); height: 0; }
+.gml-buy  { background: rgba(251,191,36,0.9); width: 8px; height: 8px; border-radius: 50%; }
+
 /* ── Colors ── */
 .profit { color: var(--profit) !important; }
 .loss   { color: var(--loss)   !important; }
@@ -720,6 +905,10 @@ body {
   .ts-item { flex: 0 0 50%; border-bottom: 1px solid var(--border); }
   .ts-item:nth-child(even) { border-right: none; }
   .ts-item:nth-last-child(-n+2) { border-bottom: none; }
+}
+
+@media (max-width: 600px) {
+  .gold-modal-stats { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 480px) {
