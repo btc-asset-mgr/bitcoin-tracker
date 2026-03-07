@@ -1,6 +1,6 @@
 // ── 持仓配置 ──
 const PORTFOLIO = {
-  investmentCNY: 168900,
+  investmentCNY: 183900,
   investmentUSD: 20643.15,
   btcAmount:     0.1040,
   avgCost:       91517.55,
@@ -569,7 +569,9 @@ const TRANSACTIONS = [
   { id: "TXN-20260303-029", type: "buy",  date: "2026-03-03 09:30:44", amount: 341.00,  price: 68200.00, btcQty: 0.00500000, fee: 0.34, note: "限价买入 · 大跌抄底" },
   { id: "TXN-20260301-030", type: "buy",  date: "2026-03-01 09:30:44", amount: 441.00,  price: 88200.00, btcQty: 0.00500000, fee: 0.34, note: "市价买入 · 反弹低吸" },
   { id: "TXN-20260306-031", type: "sell", date: "2026-03-06 13:30:00", amount: 568.41,  price: 94735.00, btcQty: 0.00600000, fee: 0.57, note: "止盈出场", costBasis: 68200.00 },
-  { id: "TXN-20260306-032", type: "deposit", date: "2026-03-06 14:33:00", amount: 15000, price: null, btcQty: null, fee: 0, note: "追加充值 · 待建仓" },
+  { id: "TXN-20260306-032", type: "deposit", date: "2026-03-06 14:33:00", amount: 7500,  price: null, btcQty: null, fee: 0, note: "追加充值 · 第一批" },
+  { id: "TXN-20260306-033", type: "deposit", date: "2026-03-06 15:20:00", amount: 10000, price: null, btcQty: null, fee: 0, note: "追加充值 · 第二批" },
+  { id: "TXN-20260306-034", type: "deposit", date: "2026-03-06 16:45:00", amount: 12500, price: null, btcQty: null, fee: 0, note: "追加充值 · 第三批" },
 ];
 
 // ── 翻页状态 ──
