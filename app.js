@@ -370,7 +370,7 @@ function renderPnlChart(labels, pnlData) {
     data: { labels, datasets: [{ label: "未实现盈亏 (USD)", data: pnlData, backgroundColor: colors, borderRadius: 3, borderSkipped: false }] },
     options: {
       responsive: true,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => (c.raw >= 0 ? "盈利: +" : "亏损: ") + fmtUSD(c.raw) } } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => (c && c.raw != null ? (c.raw >= 0 ? "盈利: +" : "亏损: ") + fmtUSD(c.raw) : "") } } },
       scales: {
         x: { ticks: { color: "#64748b", font: { size: 10 }, maxRotation: 45 }, grid: { color: "rgba(255,255,255,0.04)" } },
         y: { ticks: { color: "#64748b", font: { size: 10 }, callback: v => (v >= 0 ? "+" : "") + "$" + v.toLocaleString() }, grid: { color: "rgba(255,255,255,0.04)" } }
@@ -420,7 +420,7 @@ function renderPriceChart(labels, prices) {
     data: { labels, datasets: [{ label: "BTC 价格 (USD)", data: prices, borderColor: rising ? "#26a69a" : "#ef5350", borderWidth: 2, backgroundColor: grad, fill: true, pointRadius: 0, pointHoverRadius: 4, tension: 0.4 }] },
     options: {
       responsive: true,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => "价格: " + fmtUSD(c.raw) } } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c && c.raw != null ? "价格: " + fmtUSD(c.raw) : "" } } },
       scales: {
         x: { ticks: { color: "#64748b", font: { size: 10 }, maxRotation: 45 }, grid: { color: "rgba(255,255,255,0.04)" } },
         y: { ticks: { color: "#64748b", font: { size: 10 }, callback: v => "$" + v.toLocaleString() }, grid: { color: "rgba(255,255,255,0.04)" } }
@@ -1255,9 +1255,11 @@ async function fetchGoldHistory(days) {
 
 function renderGoldPriceChart(data, avgCost) {
   if (!data || data.length < 2) return;
+  data = data.filter(d => d && d.t != null && (d.v === 0 || (d.v && !isNaN(d.v))));
+  if (data.length < 2) return;
 
   const labels = data.map(d => new Date(d.t).toLocaleDateString("zh-CN", { month: "short", day: "numeric" }));
-  const vals   = data.map(d => d.v);
+  const vals   = data.map(d => Number(d.v));
   const high   = Math.max(...vals);
   const low    = Math.min(...vals);
   const last   = vals[vals.length - 1];
@@ -1271,26 +1273,30 @@ function renderGoldPriceChart(data, avgCost) {
   set("gmsLow",   "¥" + low.toFixed(2));
   setClass("gmsChange", "gms-val " + (chg >= 0 ? "profit" : "loss"),
     (chg >= 0 ? "+" : "") + chg.toFixed(2) + "%");
-  set("gmsAvgCost", "¥" + avgCost.toFixed(2) + "/克");
+  set("gmsAvgCost", "¥" + (isNaN(Number(avgCost)) ? "0.00" : Number(avgCost).toFixed(2)) + "/克");
   const { netGrams, holdCost } = calcGoldPortfolio();
   const pnl    = last * netGrams - holdCost;
   const pnlPct = holdCost > 0 ? (pnl / holdCost * 100) : 0;
   setClass("gmsPnl", "gms-val " + (pnl >= 0 ? "profit" : "loss"),
     (pnl >= 0 ? "+" : "") + "¥" + Math.abs(pnl).toFixed(0) + " (" + (pnl >= 0 ? "+" : "") + pnlPct.toFixed(2) + "%)");
 
-  const avgLine = vals.map(() => +avgCost.toFixed(2));
+  const safeAvgCost = Number(avgCost);
+  const avgLine = vals.map(() => (isNaN(safeAvgCost) ? 0 : +safeAvgCost.toFixed(2)));
 
   // 每次切换时间段必须销毁旧图再重建，避免 payload undefined 报错
   if (goldPriceChart) {
-    goldPriceChart.destroy();
+    try { goldPriceChart.destroy(); } catch (_) {}
     goldPriceChart = null;
   }
 
-  const ctx  = document.getElementById("goldPriceChart").getContext("2d");
+  const canvas = document.getElementById("goldPriceChart");
+  if (!canvas || !canvas.getContext) return;
+  const ctx  = canvas.getContext("2d");
   const grad = ctx.createLinearGradient(0, 0, 0, 280);
   grad.addColorStop(0, rising ? "rgba(251,191,36,0.22)" : "rgba(239,83,80,0.18)");
   grad.addColorStop(1, "rgba(0,0,0,0)");
 
+  try {
   goldPriceChart = new Chart(ctx, {
     type: "line",
     data: {
@@ -1327,9 +1333,12 @@ function renderGoldPriceChart(data, avgCost) {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: c => c.datasetIndex === 0
-              ? "金价: ¥" + Number(c.raw).toFixed(2) + "/克"
-              : "均价: ¥" + Number(c.raw).toFixed(2) + "/克"
+            label: c => {
+              if (!c || c.raw == null || isNaN(Number(c.raw))) return "";
+              return c.datasetIndex === 0
+                ? "金价: ¥" + Number(c.raw).toFixed(2) + "/克"
+                : "均价: ¥" + Number(c.raw).toFixed(2) + "/克";
+            }
           }
         }
       },
@@ -1345,6 +1354,10 @@ function renderGoldPriceChart(data, avgCost) {
       }
     }
   });
+  } catch (e) {
+    console.warn("Gold chart render error:", e);
+    goldPriceChart = null;
+  }
 }
 
 async function openGoldModal(days) {
