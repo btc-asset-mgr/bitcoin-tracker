@@ -922,9 +922,13 @@ const GOLD_TRANSACTIONS = [
   { id: "AU-B-20260306b", type: "buy", date: "2026-03-06 15:22:00", amount: 10000, price: 1137.0, grams: 8.795,  fee: 10.00, note: "市价买入 · 高位加仓" },
   { id: "AU-B-20260306c", type: "buy", date: "2026-03-06 16:48:00", amount: 12500, price: 1138.5, grams: 10.979, fee: 12.50, note: "市价买入 · 高位加仓" },
 
-  // 卖出记录
-  { id: "AU-S-20251025", type: "sell", date: "2025-10-25 15:30:00", amount: 2230,   price: 635.4, grams: 3.509,  fee: 2.23, note: "止盈出场", costBasis: 604.5 },
-  { id: "AU-S-20260115", type: "sell", date: "2026-01-15 10:45:00", amount: 3450,   price: 679.8, grams: 5.075,  fee: 3.45, note: "节前兑现", costBasis: 648.2 },
+  // 卖出记录（盈亏分散：部分止盈绿色，部分止损红色）
+  { id: "AU-S-20251025", type: "sell", date: "2025-10-25 15:30:00", amount: 2230,   price: 635.4,  grams: 3.509, fee: 2.23, note: "止盈出场", costBasis: 604.5 },
+  { id: "AU-S-20251120", type: "sell", date: "2025-11-20 14:30:00", amount: 1240,   price: 620.0,  grams: 2.000, fee: 1.24, note: "回调止损", costBasis: 648.2 },
+  { id: "AU-S-20251228", type: "sell", date: "2025-12-28 11:20:00", amount: 2004,   price: 668.0,  grams: 3.000, fee: 2.00, note: "反弹止盈", costBasis: 661.4 },
+  { id: "AU-S-20260115", type: "sell", date: "2026-01-15 10:45:00", amount: 3450,   price: 679.8,  grams: 5.075, fee: 3.45, note: "节前兑现", costBasis: 648.2 },
+  { id: "AU-S-20260222", type: "sell", date: "2026-02-22 15:40:00", amount: 4272,   price: 712.0,  grams: 6.000, fee: 4.27, note: "高位止盈", costBasis: 698.2 },
+  { id: "AU-S-20260302", type: "sell", date: "2026-03-02 10:15:00", amount: 3360,   price: 1120.0, grams: 3.000, fee: 3.36, note: "回调减仓", costBasis: 1136.0 },
 ];
 
 let goldTxCurrentPage = 1;
