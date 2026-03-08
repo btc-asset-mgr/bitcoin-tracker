@@ -1,11 +1,11 @@
 // ── 持仓配置 ──
 // 分散买入策略：22 笔买入 + 6 笔卖出，盈亏分散
-// 净持仓 0.1056 BTC，加权均价 $52,203（深度抄底），当前盈利 +25%
+// 净持仓 0.1056 BTC，加权均价 $63,353，当前盈利 +3%
 const PORTFOLIO = {
   investmentCNY: 70000,
   investmentUSD: 9628.61,
   btcAmount:     0.1056,
-  avgCost:       52203.00,
+  avgCost:       63353.00,
   entryDate:     "2025-07-12",
   cnyRate:       7.27
 };
