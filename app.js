@@ -913,11 +913,10 @@ function renderGoldTransactions(filter = "all", page = 1) {
             </div>
             <div class="tx-qty-col">
               <div class="tx-qty-val tx-dep-color">+¥${tx.amount.toLocaleString("zh-CN")}</div>
+              <div class="tx-qty-sub">${tx.note}</div>
             </div>
           </div>
           <div class="tx-meta-row">
-            <span class="tx-meta-item">${tx.note}</span>
-            <span class="tx-meta-sep">·</span>
             <span class="tx-meta-item tx-date">${tx.date}</span>
             <span class="tx-meta-sep">·</span>
             <span class="tx-meta-item tx-id">${tx.id}</span>
