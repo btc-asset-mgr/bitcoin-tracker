@@ -853,7 +853,7 @@ const GOLD_TRANSACTIONS = [
   { id: "AU-D-20260206b", type: "deposit", date: "2026-02-06 17:13:30", amount: 15000, price: null, grams: null, fee: 0, note: "分批转入" },
   { id: "AU-D-20260213", type: "deposit", date: "2026-02-13 16:05:39", amount: 3000,  price: null, grams: null, fee: 0, note: "追加充值" },
   { id: "AU-D-20260216", type: "deposit", date: "2026-02-16 21:25:56", amount: 2000,  price: null, grams: null, fee: 0, note: "追加充值" },
-  { id: "AU-D-20260306", type: "deposit", date: "2026-03-06 14:33:00", amount: 7500,  price: null, grams: null, fee: 0, note: "追加充值 · 黄金建仓" },
+  { id: "AU-D-20260306", type: "deposit", date: "2026-03-06 14:30:00", amount: 7500,  price: null, grams: null, fee: 0, note: "追加充值 · 黄金建仓" },
 
   // 买入记录（价格单位 ¥/克，grams 克数）
   { id: "AU-B-20250816", type: "buy",  date: "2025-08-16 10:22:00", amount: 4812,   price: 589.3, grams: 8.166,  fee: 4.81, note: "首次建仓" },
@@ -913,10 +913,12 @@ function renderGoldTransactions(filter = "all", page = 1) {
             </div>
             <div class="tx-qty-col">
               <div class="tx-qty-val tx-dep-color">+¥${tx.amount.toLocaleString("zh-CN")}</div>
-              <div class="tx-qty-sub">${tx.note}</div>
+              <div class="tx-qty-sub">≈ $${(tx.amount / (PORTFOLIO.cnyRate || 7.27)).toFixed(2)} USD</div>
             </div>
           </div>
           <div class="tx-meta-row">
+            <span class="tx-meta-item">${tx.note}</span>
+            <span class="tx-meta-sep">·</span>
             <span class="tx-meta-item tx-date">${tx.date}</span>
             <span class="tx-meta-sep">·</span>
             <span class="tx-meta-item tx-id">${tx.id}</span>
